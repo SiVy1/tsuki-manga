@@ -24,7 +24,7 @@ export type ResolvedResumeProgress = {
 
 export const readingModes = [
   { id: "WEBTOON", label: "Webtoon" },
-  { id: "VERTICAL", label: "Vertical" },
+  { id: "VERTICAL", label: "Left to right" },
   { id: "RIGHT_TO_LEFT", label: "Right to left" },
 ] as const satisfies ReadonlyArray<{ id: ReaderMode; label: string }>;
 

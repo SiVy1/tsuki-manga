@@ -506,72 +506,84 @@ export function ChapterReader({
       onWheelCapture={dismissResumePrompt}
       onTouchStartCapture={dismissResumePrompt}
     >
-      <div className="flex flex-wrap items-center gap-3">
-        {readingModes.map((mode) => (
-          <button
-            key={mode.id}
-            type="button"
-            onClick={() => {
-              saveStoredReadingMode(mode.id);
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-[11px] uppercase tracking-[0.18em] text-muted">
+              Reading mode
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {readingModes.map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => {
+                    saveStoredReadingMode(mode.id);
 
-              if (persistToAccount && onPersistReadingMode) {
-                startTransition(async () => {
-                  await onPersistReadingMode({
-                    readingMode: mode.id,
-                  });
-                });
-              }
-            }}
-            className={`rounded-full border px-4 py-2 text-sm transition ${
-              readingMode === mode.id
-                ? "border-foreground bg-foreground text-background"
-                : "border-border text-muted hover:border-foreground/30 hover:text-foreground"
-            }`}
-          >
-            {mode.label}
-          </button>
-        ))}
-        <span className="text-xs uppercase tracking-[0.16em] text-muted">
-          {isPending ? "Saving preference" : "Reader mode"}
-        </span>
+                    if (persistToAccount && onPersistReadingMode) {
+                      startTransition(async () => {
+                        await onPersistReadingMode({
+                          readingMode: mode.id,
+                        });
+                      });
+                    }
+                  }}
+                  className={`rounded-full px-3 py-1.5 text-sm transition ${
+                    readingMode === mode.id
+                      ? "bg-foreground text-background"
+                      : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {isPending ? (
+            <span className="text-xs text-muted">Saving preference</span>
+          ) : null}
+        </div>
       </div>
 
       {resumeProgress ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-border bg-surface px-4 py-3">
-          <p className="text-sm text-foreground">
+        <div className="flex flex-wrap items-center gap-3 border-b border-t border-border/60 py-3 text-sm">
+          <p className="text-foreground">
             Resume from page {resumeProgress.visiblePageNumber}
           </p>
-          <div className="flex flex-wrap gap-2 text-sm">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={handleResumeReading}
-              className="rounded-full border border-foreground bg-foreground px-4 py-2 text-background transition hover:opacity-90"
+              className="text-foreground underline decoration-border underline-offset-4 transition hover:decoration-foreground"
             >
-              Resume reading
+              Resume
             </button>
             <button
               type="button"
               onClick={handleStartFromBeginning}
-              className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/30 hover:text-foreground"
+              className="text-muted transition hover:text-foreground"
             >
-              Start from beginning
+              Start over
             </button>
           </div>
         </div>
       ) : null}
 
       {isRightToLeft ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-border bg-surface px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
           <div className="space-y-1">
             <p className="text-sm text-foreground">
               Page {visiblePages.length - currentRtlIndex} of {visiblePages.length}
             </p>
             <p className="text-xs text-muted">
-              Tap left for next, right for previous.
+              Tap left for next. Tap right for previous.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <div className="flex flex-wrap gap-2">
+            <span className="text-[11px] uppercase tracking-[0.18em] text-muted">
+              Page fit
+            </span>
+            <div className="flex flex-wrap gap-1">
               {rtlFitModes.map((mode) => (
                 <button
                   key={mode.id}
@@ -579,32 +591,16 @@ export function ChapterReader({
                   onClick={() => {
                     setStoredRtlFitMode(mode.id);
                   }}
-                  className={`rounded-full border px-4 py-2 transition ${
+                  className={`rounded-full px-3 py-1.5 transition ${
                     rtlFitMode === mode.id
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border text-muted hover:border-foreground/30 hover:text-foreground"
+                      ? "bg-foreground text-background"
+                      : "text-muted hover:text-foreground"
                   }`}
                 >
                   {mode.label}
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={goToRtlPreviousPage}
-              disabled={!rtlPreviousPage}
-              className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Previous page
-            </button>
-            <button
-              type="button"
-              onClick={goToRtlNextPage}
-              disabled={!rtlNextPage}
-              className="rounded-full border border-foreground bg-foreground px-4 py-2 text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Next page
-            </button>
           </div>
         </div>
       ) : null}
@@ -660,7 +656,11 @@ export function ChapterReader({
           ) : null}
         </div>
       ) : (
-        <div className={`mx-auto ${isWebtoon ? "max-w-3xl space-y-0" : "max-w-5xl space-y-6"}`}>
+        <div
+          className={`mx-auto ${
+            isWebtoon ? "max-w-3xl space-y-0" : "max-w-6xl space-y-10"
+          }`}
+        >
           {visiblePages.map((page) =>
             page.imageUrl ? (
               <article
@@ -672,7 +672,7 @@ export function ChapterReader({
                 className={`overflow-hidden ${
                   isWebtoon
                     ? "rounded-none border-0 bg-transparent p-0"
-                    : "rounded-[1.5rem] border border-border bg-surface p-3"
+                    : "flex min-h-[85dvh] items-center justify-center rounded-none border-0 bg-transparent p-0"
                 }`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -681,7 +681,11 @@ export function ChapterReader({
                   alt=""
                   width={page.width || undefined}
                   height={page.height || undefined}
-                  className="mx-auto h-auto w-full"
+                  className={`mx-auto ${
+                    isWebtoon
+                      ? "block h-auto w-full"
+                      : "block h-[85dvh] w-auto max-w-full"
+                  }`}
                 />
               </article>
             ) : null,
