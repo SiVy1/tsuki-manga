@@ -29,6 +29,22 @@ export const reorderChapterPagesInputSchema = z.object({
   ),
 });
 
+export const moveChapterPageInputSchema = z.object({
+  chapterId: uuidSchema,
+  pageId: uuidSchema,
+  direction: z.enum(["up", "down"]),
+});
+
+export const removeChapterPageInputSchema = z.object({
+  chapterId: uuidSchema,
+  pageId: uuidSchema,
+});
+
+export const replaceChapterPageInputSchema = z.object({
+  chapterId: uuidSchema,
+  pageId: uuidSchema,
+});
+
 export const publishChapterInputSchema = z.object({
   chapterId: uuidSchema,
 });

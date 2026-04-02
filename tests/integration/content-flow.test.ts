@@ -5,7 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   createChapterAction,
+  moveChapterPageAction,
   publishChapterAction,
+  removeChapterPageAction,
+  replaceChapterPageAction,
   restoreChapterAction,
   softDeleteChapterAction,
   unpublishChapterAction,
@@ -17,6 +20,7 @@ import {
   softDeleteSeriesAction,
 } from "@/app/_actions/series/actions";
 import { prisma } from "@/app/_lib/db/client";
+import { getDashboardChapterPreviewData } from "@/app/_lib/dashboard/queries";
 import {
   resetDatabaseAndStorage,
   seedDefaultUsers,
@@ -138,6 +142,140 @@ describe("series and chapter backend flow", () => {
 
     expect(unpublishedChapter?.status).toBe("DRAFT");
     expect(unpublishedChapter?.pages.every((page) => page.asset.scope === "DRAFT")).toBe(true);
+  });
+
+  it("supports draft preview plus move, remove, and replace page actions", async () => {
+    const seriesResult = await createSeriesAction({
+      title: "Workflow Pages",
+    });
+
+    if (!seriesResult.success) {
+      throw new Error("series creation failed");
+    }
+
+    const chapterResult = await createChapterAction({
+      seriesId: seriesResult.data.id,
+      number: "3",
+      title: "Preview Pass",
+    });
+
+    if (!chapterResult.success) {
+      throw new Error("chapter creation failed");
+    }
+
+    const uploadFormData = new FormData();
+    uploadFormData.append("files", await createPngFile("001.png", { rgb: { r: 40, g: 80, b: 120 } }));
+    uploadFormData.append("files", await createPngFile("002.png", { rgb: { r: 120, g: 80, b: 40 } }));
+    uploadFormData.append("files", await createPngFile("003.png", { rgb: { r: 80, g: 120, b: 40 } }));
+
+    const uploadResult = await uploadChapterPagesAction(chapterResult.data.id, uploadFormData);
+
+    if (!uploadResult.success) {
+      throw new Error("upload failed");
+    }
+
+    const initialPages = await prisma.chapterPage.findMany({
+      where: {
+        chapterId: chapterResult.data.id,
+      },
+      include: {
+        asset: true,
+      },
+      orderBy: {
+        pageOrder: "asc",
+      },
+    });
+
+    const moveResult = await moveChapterPageAction({
+      chapterId: chapterResult.data.id,
+      pageId: initialPages[2]!.id,
+      direction: "up",
+    });
+
+    expect(moveResult.success).toBe(true);
+
+    const movedPages = await prisma.chapterPage.findMany({
+      where: {
+        chapterId: chapterResult.data.id,
+      },
+      include: {
+        asset: true,
+      },
+      orderBy: {
+        pageOrder: "asc",
+      },
+    });
+
+    expect(movedPages.map((page) => page.asset.originalFilename)).toEqual([
+      "001.png",
+      "003.png",
+      "002.png",
+    ]);
+
+    const removeResult = await removeChapterPageAction({
+      chapterId: chapterResult.data.id,
+      pageId: movedPages[1]!.id,
+    });
+
+    expect(removeResult.success).toBe(true);
+
+    const afterRemovePages = await prisma.chapterPage.findMany({
+      where: {
+        chapterId: chapterResult.data.id,
+      },
+      include: {
+        asset: true,
+      },
+      orderBy: {
+        pageOrder: "asc",
+      },
+    });
+
+    expect(afterRemovePages).toHaveLength(2);
+    expect(afterRemovePages.map((page) => page.pageOrder)).toEqual([1, 2]);
+    expect(afterRemovePages.map((page) => page.asset.originalFilename)).toEqual([
+      "001.png",
+      "002.png",
+    ]);
+
+    const replaceFormData = new FormData();
+    replaceFormData.append(
+      "file",
+      await createPngFile("replacement.png", {
+        width: 64,
+        height: 96,
+        rgb: { r: 200, g: 90, b: 150 },
+      }),
+    );
+
+    const oldStorageKey = afterRemovePages[0]!.asset.storageKey;
+    const replaceResult = await replaceChapterPageAction(
+      chapterResult.data.id,
+      afterRemovePages[0]!.id,
+      replaceFormData,
+    );
+
+    expect(replaceResult.success).toBe(true);
+
+    const replacedPage = await prisma.chapterPage.findUnique({
+      where: {
+        id: afterRemovePages[0]!.id,
+      },
+      include: {
+        asset: true,
+      },
+    });
+
+    expect(replacedPage?.pageOrder).toBe(1);
+    expect(replacedPage?.width).toBe(64);
+    expect(replacedPage?.height).toBe(96);
+    expect(replacedPage?.asset.originalFilename).toBe("replacement.png");
+    expect(replacedPage?.asset.storageKey).not.toBe(oldStorageKey);
+
+    const previewData = await getDashboardChapterPreviewData(chapterResult.data.id);
+
+    expect(previewData.chapter.pages).toHaveLength(2);
+    expect(previewData.chapter.pages[0]?.imageUrl).toContain("/api/draft-assets/");
   });
 
   it("soft deletes and restores content according to product rules", async () => {

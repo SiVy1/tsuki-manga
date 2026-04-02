@@ -51,6 +51,7 @@ test("test auth can switch from reader to admin", async ({ page }) => {
   });
 
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Create first series" }).first()).toBeVisible();
 });
 
 test("editor creates draft and publisher publishes it", async ({ page }) => {
@@ -67,6 +68,8 @@ test("editor creates draft and publisher publishes it", async ({ page }) => {
   await page.getByRole("button", { name: "Create series" }).click();
 
   await expect(page.getByRole("heading", { name: "Moon Harbor" })).toBeVisible();
+  await expect(page.getByText("This series is ready for its first draft.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Start the first draft" })).toBeVisible();
 
   await page.getByLabel("Chapter number").last().fill("1");
   await page.getByLabel("Optional title").last().fill("Arrival");
@@ -84,6 +87,11 @@ test("editor creates draft and publisher publishes it", async ({ page }) => {
   await page.getByRole("button", { name: "Upload pages" }).click();
 
   await expect(page.getByText("Pages uploaded.")).toBeVisible();
+  await page.getByRole("link", { name: "Open draft preview" }).first().click();
+  await expect(page).toHaveURL(/\/dashboard\/chapters\/.+\/preview/);
+  await expect(page.getByRole("link", { name: "Return to chapter" })).toBeVisible();
+  await page.getByRole("link", { name: "Return to chapter" }).click();
+  await expect(page.getByRole("heading", { name: "Chapter 1" })).toBeVisible();
 
   await Promise.all([
     page.waitForURL("**/"),

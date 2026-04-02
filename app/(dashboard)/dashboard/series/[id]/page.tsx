@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { RolePreset, SeriesVisibility } from "@/generated/prisma/client";
+import { ChapterStatus, RolePreset, SeriesVisibility } from "@/generated/prisma/client";
 
 import { createChapterAction } from "@/app/_actions/chapters/actions";
 import {
@@ -112,6 +112,29 @@ export default async function DashboardSeriesDetailPage({
   }
 
   const selectedTaxonomyIds = new Set(data.series.taxonomyTerms.map((term) => term.id));
+  const draftChapters = data.series.chapters.filter(
+    (chapter) => chapter.status === ChapterStatus.DRAFT,
+  );
+  const latestDraft =
+    [...draftChapters].sort(
+      (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
+    )[0] ?? null;
+  const publishedChapterCount = data.series.chapters.filter(
+    (chapter) => chapter.status === ChapterStatus.PUBLISHED,
+  ).length;
+  const nextChapterSuggestion = (() => {
+    const values = data.series.chapters
+      .map((chapter) => Number(chapter.number))
+      .filter((value) => Number.isFinite(value));
+
+    if (!values.length) {
+      return "1";
+    }
+
+    const nextValue = Math.max(...values) + 1;
+
+    return Number.isInteger(nextValue) ? String(nextValue) : String(nextValue);
+  })();
 
   return (
     <div className="space-y-6">
@@ -124,6 +147,21 @@ export default async function DashboardSeriesDetailPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-3 text-sm">
+          {latestDraft ? (
+            <Link
+              href={`/dashboard/chapters/${latestDraft.id}`}
+              className="rounded-full bg-foreground px-4 py-2 text-background transition hover:opacity-90"
+            >
+              Continue latest draft
+            </Link>
+          ) : (
+            <a
+              href="#create-draft"
+              className="rounded-full bg-foreground px-4 py-2 text-background transition hover:opacity-90"
+            >
+              Create first draft
+            </a>
+          )}
           <Link
             href="/dashboard/series"
             className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/20 hover:text-foreground"
@@ -153,7 +191,233 @@ export default async function DashboardSeriesDetailPage({
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_340px]">
         <article className="panel p-6">
-          <form action={updateSeriesFormAction} className="space-y-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.16em] text-muted">Editorial workflow</p>
+              <h2 className="font-serif text-3xl">Chapters workspace</h2>
+              <p className="text-sm text-muted">
+                Continue an existing draft or start the next chapter without leaving this series.
+              </p>
+            </div>
+            <Link href="/dashboard/chapters" className="text-sm text-muted">
+              Full chapter view
+            </Link>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-muted">
+              {data.series.chapters.length} chapter{data.series.chapters.length === 1 ? "" : "s"}
+            </span>
+            <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-muted">
+              {draftChapters.length} draft{draftChapters.length === 1 ? "" : "s"}
+            </span>
+            <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs uppercase tracking-[0.16em] text-muted">
+              {publishedChapterCount} published
+            </span>
+          </div>
+
+          {latestDraft ? (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] bg-[var(--surface-muted)] px-5 py-4">
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.16em] text-muted">Latest draft</p>
+                <p className="font-medium">
+                  Chapter {latestDraft.number}
+                  {latestDraft.label ? ` ${latestDraft.label}` : ""}
+                </p>
+                <p className="text-sm text-muted">
+                  {latestDraft.title ? `${latestDraft.title} - ` : ""}
+                  Updated {formatDateTime(latestDraft.updatedAt)}
+                </p>
+              </div>
+              <Link
+                href={`/dashboard/chapters/${latestDraft.id}`}
+                className="rounded-full bg-foreground px-4 py-2 text-sm text-background transition hover:opacity-90"
+              >
+                Continue draft
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-3 rounded-[1.5rem] bg-[var(--surface-muted)] px-5 py-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-muted">Ready for work</p>
+              <p className="font-medium">This series is ready for its first draft.</p>
+              <p className="text-sm text-muted">
+                Start a chapter now and continue the page workflow on the next screen.
+              </p>
+              <a href="#create-draft" className="text-sm underline">
+                Start the first draft
+              </a>
+            </div>
+          )}
+
+          <div className="mt-6 divide-y divide-border">
+            {data.series.chapters.length ? (
+              data.series.chapters.map((chapter) => (
+                <Link
+                  key={chapter.id}
+                  href={`/dashboard/chapters/${chapter.id}`}
+                  className="flex items-start justify-between gap-4 py-4 first:pt-0 last:pb-0"
+                >
+                  <div className="space-y-1">
+                    <p className="font-medium">
+                      Chapter {chapter.number}
+                      {chapter.label ? ` ${chapter.label}` : ""}
+                    </p>
+                    {chapter.title ? (
+                      <p className="text-sm text-muted">{chapter.title}</p>
+                    ) : null}
+                    <p className="text-xs uppercase tracking-[0.16em] text-muted">
+                      Updated {formatDateTime(chapter.updatedAt)}
+                    </p>
+                  </div>
+                  <div className="space-y-2 text-right">
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs uppercase tracking-[0.16em] ${
+                        chapter.status === ChapterStatus.PUBLISHED
+                          ? "status-success"
+                          : "status-warning"
+                      }`}
+                    >
+                      {humanizeEnumValue(chapter.status)}
+                    </span>
+                    {latestDraft?.id === chapter.id ? (
+                      <p className="text-xs text-muted">Continue this draft</p>
+                    ) : null}
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="space-y-3 py-4">
+                <p className="text-sm text-muted">
+                  No chapters exist yet. Use the draft form on the right to create the first one.
+                </p>
+                <a href="#create-draft" className="text-sm underline">
+                  Create a chapter
+                </a>
+              </div>
+            )}
+          </div>
+        </article>
+
+        <aside className="space-y-6">
+          <article id="create-draft" className="panel p-6">
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.16em] text-muted">Create draft</p>
+              <h2 className="font-serif text-3xl">Start a new chapter</h2>
+              <p className="text-sm text-muted">
+                Create the draft here, then continue uploading and refining pages on the chapter screen.
+              </p>
+            </div>
+
+            <form action={createChapterFormAction} className="mt-6 space-y-4">
+              <div className="space-y-1">
+                <label htmlFor="number" className="text-sm font-medium">
+                  Chapter number
+                </label>
+                <input
+                  id="number"
+                  name="number"
+                  required
+                  defaultValue={nextChapterSuggestion}
+                  className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
+                />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1">
+                  <label htmlFor="label" className="text-sm font-medium">
+                    Optional label
+                  </label>
+                  <input
+                    id="label"
+                    name="label"
+                    placeholder="extra"
+                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="chapterSlug" className="text-sm font-medium">
+                    Custom slug
+                  </label>
+                  <input
+                    id="chapterSlug"
+                    name="chapterSlug"
+                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="chapterTitle" className="text-sm font-medium">
+                  Optional title
+                </label>
+                <input
+                  id="chapterTitle"
+                  name="chapterTitle"
+                  className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
+                />
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <SubmitButton pendingLabel="Creating chapter...">Create chapter</SubmitButton>
+                {latestDraft ? (
+                  <Link
+                    href={`/dashboard/chapters/${latestDraft.id}`}
+                    className="text-sm text-muted underline"
+                  >
+                    Continue latest draft instead
+                  </Link>
+                ) : null}
+              </div>
+            </form>
+          </article>
+
+          <article className="panel space-y-3 p-5">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted">State</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                className={`rounded-full px-3 py-1 text-xs uppercase tracking-[0.16em] ${
+                  data.series.visibility === "PUBLIC"
+                    ? "status-success"
+                    : "status-warning"
+                }`}
+              >
+                {humanizeEnumValue(data.series.visibility)}
+              </span>
+              <span className="text-sm text-muted">
+                Updated {formatDateTime(data.series.updatedAt)}
+              </span>
+            </div>
+            <div className="space-y-2 text-sm text-muted">
+              <p>
+                {data.series.chapters.length} chapter{data.series.chapters.length === 1 ? "" : "s"} total
+              </p>
+              <p>
+                {draftChapters.length} draft{draftChapters.length === 1 ? "" : "s"} still in progress
+              </p>
+              <p>
+                {publishedChapterCount} published chapter{publishedChapterCount === 1 ? "" : "s"}
+              </p>
+            </div>
+
+            {user.rolePreset === RolePreset.ADMIN ? (
+              <form action={softDeleteSeriesFormAction}>
+                <SubmitButton
+                  pendingLabel="Moving to trash..."
+                  className="danger-outline rounded-full px-4 py-2.5 text-sm transition disabled:cursor-wait disabled:opacity-70"
+                >
+                  Move series to trash
+                </SubmitButton>
+              </form>
+            ) : null}
+          </article>
+        </aside>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_340px]">
+        <article className="panel p-6">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted">Series details</p>
+            <h2 className="font-serif text-3xl">Edit series</h2>
+          </div>
+
+          <form action={updateSeriesFormAction} className="mt-6 space-y-6">
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-1">
                 <label htmlFor="title" className="text-sm font-medium">
@@ -294,141 +558,7 @@ export default async function DashboardSeriesDetailPage({
               <SubmitButton pendingLabel="Uploading cover...">Upload cover</SubmitButton>
             </form>
           </article>
-
-          <article className="panel space-y-3 p-5">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted">State</p>
-            <div className="flex items-center gap-3">
-              <span
-                className={`rounded-full px-3 py-1 text-xs uppercase tracking-[0.16em] ${
-                  data.series.visibility === "PUBLIC"
-                    ? "status-success"
-                    : "status-warning"
-                }`}
-              >
-                {humanizeEnumValue(data.series.visibility)}
-              </span>
-              <span className="text-sm text-muted">
-                {data.series.chapters.length} chapter{data.series.chapters.length === 1 ? "" : "s"}
-              </span>
-            </div>
-
-            {user.rolePreset === RolePreset.ADMIN ? (
-              <form action={softDeleteSeriesFormAction}>
-                <SubmitButton
-                  pendingLabel="Moving to trash..."
-                  className="danger-outline rounded-full px-4 py-2.5 text-sm transition disabled:cursor-wait disabled:opacity-70"
-                >
-                  Move series to trash
-                </SubmitButton>
-              </form>
-            ) : null}
-          </article>
         </aside>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-        <article className="panel p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.16em] text-muted">Chapters</p>
-              <h2 className="mt-2 font-serif text-3xl">Existing chapter list</h2>
-            </div>
-            <Link href="/dashboard/chapters" className="text-sm text-muted">
-              Full chapter view
-            </Link>
-          </div>
-
-          <div className="mt-6 divide-y divide-border">
-            {data.series.chapters.length ? (
-              data.series.chapters.map((chapter) => (
-                <Link
-                  key={chapter.id}
-                  href={`/dashboard/chapters/${chapter.id}`}
-                  className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
-                >
-                  <div className="space-y-1">
-                    <p className="font-medium">
-                      Chapter {chapter.number}
-                      {chapter.label ? ` ${chapter.label}` : ""}
-                    </p>
-                    {chapter.title ? (
-                      <p className="text-sm text-muted">{chapter.title}</p>
-                    ) : null}
-                  </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs uppercase tracking-[0.16em] ${
-                      chapter.status === "PUBLISHED"
-                        ? "status-success"
-                        : "status-warning"
-                    }`}
-                  >
-                    {chapter.status}
-                  </span>
-                </Link>
-              ))
-            ) : (
-              <p className="py-4 text-sm text-muted">
-                No chapters exist yet. Use the draft form on the right to create the first one.
-              </p>
-            )}
-          </div>
-        </article>
-
-        <article className="panel p-6">
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted">Create draft</p>
-            <h2 className="font-serif text-3xl">Start a new chapter</h2>
-          </div>
-
-          <form action={createChapterFormAction} className="mt-6 space-y-4">
-            <div className="space-y-1">
-              <label htmlFor="number" className="text-sm font-medium">
-                Chapter number
-              </label>
-              <input
-                id="number"
-                name="number"
-                required
-                placeholder="1"
-                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
-              />
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-1">
-                <label htmlFor="label" className="text-sm font-medium">
-                  Optional label
-                </label>
-                <input
-                  id="label"
-                  name="label"
-                  placeholder="extra"
-                  className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
-                />
-              </div>
-              <div className="space-y-1">
-                <label htmlFor="chapterSlug" className="text-sm font-medium">
-                  Custom slug
-                </label>
-                <input
-                  id="chapterSlug"
-                  name="chapterSlug"
-                  className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
-                />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="chapterTitle" className="text-sm font-medium">
-                Optional title
-              </label>
-              <input
-                id="chapterTitle"
-                name="chapterTitle"
-                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
-              />
-            </div>
-            <SubmitButton pendingLabel="Creating chapter...">Create chapter</SubmitButton>
-          </form>
-        </article>
       </section>
     </div>
   );

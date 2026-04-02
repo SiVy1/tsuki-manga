@@ -17,8 +17,11 @@ import { buildAssetStorageKey } from "@/app/_lib/storage/keys";
 import { storageDriver, getStorageDriverEnum } from "@/app/_lib/storage";
 import {
   createChapterInputSchema,
+  moveChapterPageInputSchema,
   publishChapterInputSchema,
+  removeChapterPageInputSchema,
   reorderChapterPagesInputSchema,
+  replaceChapterPageInputSchema,
   restoreChapterInputSchema,
   softDeleteChapterInputSchema,
   unpublishChapterInputSchema,
@@ -46,6 +49,38 @@ async function getEditableChapter(chapterId: string) {
           pageOrder: "asc",
         },
       },
+    },
+  });
+}
+
+async function saveChapterPageOrder(
+  transaction: Prisma.TransactionClient,
+  chapterId: string,
+  orderedPageIds: string[],
+  updatedById: string,
+) {
+  for (const [index, pageId] of orderedPageIds.entries()) {
+    await transaction.chapterPage.update({
+      where: { id: pageId },
+      data: {
+        pageOrder: -(index + 1),
+      },
+    });
+  }
+
+  for (const [index, pageId] of orderedPageIds.entries()) {
+    await transaction.chapterPage.update({
+      where: { id: pageId },
+      data: {
+        pageOrder: index + 1,
+      },
+    });
+  }
+
+  await transaction.chapter.update({
+    where: { id: chapterId },
+    data: {
+      updatedById,
     },
   });
 }
@@ -288,7 +323,7 @@ export async function uploadChapterPagesRedirectAction(
 }
 
 export async function reorderChapterPagesAction(rawInput: unknown) {
-  await requirePermission(PermissionBits.CHAPTERS);
+  const user = await requirePermission(PermissionBits.CHAPTERS);
   const parsed = reorderChapterPagesInputSchema.safeParse(rawInput);
 
   if (!parsed.success) {
@@ -307,18 +342,23 @@ export async function reorderChapterPagesAction(rawInput: unknown) {
 
   const pageIds = new Set(chapter.pages.map((page) => page.id));
   const hasForeignPage = parsed.data.pages.some((page) => !pageIds.has(page.id));
+  const hasIncompletePayload = parsed.data.pages.length !== chapter.pages.length;
+  const hasDuplicatePages = new Set(parsed.data.pages.map((page) => page.id)).size !== parsed.data.pages.length;
 
   if (hasForeignPage) {
     return fail("Reorder payload includes pages outside the target chapter.");
   }
 
-  await prisma.$transaction(
-    parsed.data.pages.map((page) =>
-      prisma.chapterPage.update({
-        where: { id: page.id },
-        data: { pageOrder: page.pageOrder },
-      }),
-    ),
+  if (hasIncompletePayload || hasDuplicatePages) {
+    return fail("Reorder payload must include each chapter page exactly once.");
+  }
+
+  const orderedPageIds = [...parsed.data.pages]
+    .sort((left, right) => left.pageOrder - right.pageOrder)
+    .map((page) => page.id);
+
+  await prisma.$transaction((transaction) =>
+    saveChapterPageOrder(transaction, chapter.id, orderedPageIds, user.id),
   );
 
   return ok({ chapterId: parsed.data.chapterId });
@@ -347,6 +387,259 @@ export async function reorderChapterPagesRedirectAction(
 
   redirect(
     `/dashboard/chapters/${chapterId}?notice=${encodeURIComponent("Page order updated.")}`,
+  );
+}
+
+export async function moveChapterPageAction(rawInput: unknown) {
+  const user = await requirePermission(PermissionBits.CHAPTERS);
+  const parsed = moveChapterPageInputSchema.safeParse(rawInput);
+
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? "Invalid page move request.");
+  }
+
+  const chapter = await getEditableChapter(parsed.data.chapterId);
+
+  if (!chapter || chapter.deletedAt || chapter.series.deletedAt) {
+    return fail("Chapter not found.");
+  }
+
+  if (chapter.status !== ChapterStatus.DRAFT) {
+    return fail("Only draft chapters can reorder pages.");
+  }
+
+  const currentIndex = chapter.pages.findIndex((page) => page.id === parsed.data.pageId);
+
+  if (currentIndex < 0) {
+    return fail("Page not found.");
+  }
+
+  const targetIndex =
+    parsed.data.direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+  if (targetIndex < 0 || targetIndex >= chapter.pages.length) {
+    return ok({
+      chapterId: chapter.id,
+      pageId: parsed.data.pageId,
+    });
+  }
+
+  const orderedPageIds = chapter.pages.map((page) => page.id);
+  const [movedPageId] = orderedPageIds.splice(currentIndex, 1);
+
+  if (!movedPageId) {
+    return fail("Page not found.");
+  }
+
+  orderedPageIds.splice(targetIndex, 0, movedPageId);
+
+  await prisma.$transaction((transaction) =>
+    saveChapterPageOrder(transaction, chapter.id, orderedPageIds, user.id),
+  );
+
+  return ok({
+    chapterId: chapter.id,
+    pageId: parsed.data.pageId,
+  });
+}
+
+export async function moveChapterPageRedirectAction(
+  chapterId: string,
+  pageId: string,
+  direction: "up" | "down",
+) {
+  const result = await moveChapterPageAction({
+    chapterId,
+    pageId,
+    direction,
+  });
+
+  if (!result.success) {
+    redirect(`/dashboard/chapters/${chapterId}?error=${encodeURIComponent(result.error)}`);
+  }
+
+  redirect(
+    `/dashboard/chapters/${chapterId}?notice=${encodeURIComponent("Page order updated.")}`,
+  );
+}
+
+export async function removeChapterPageAction(rawInput: unknown) {
+  const user = await requirePermission(PermissionBits.CHAPTERS);
+  const parsed = removeChapterPageInputSchema.safeParse(rawInput);
+
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? "Invalid page remove request.");
+  }
+
+  const chapter = await getEditableChapter(parsed.data.chapterId);
+
+  if (!chapter || chapter.deletedAt || chapter.series.deletedAt) {
+    return fail("Chapter not found.");
+  }
+
+  if (chapter.status !== ChapterStatus.DRAFT) {
+    return fail("Only draft chapters can remove pages.");
+  }
+
+  const page = chapter.pages.find((item) => item.id === parsed.data.pageId);
+
+  if (!page) {
+    return fail("Page not found.");
+  }
+
+  const remainingPageIds = chapter.pages
+    .filter((item) => item.id !== page.id)
+    .map((item) => item.id);
+
+  await prisma.$transaction(async (transaction) => {
+    await transaction.chapterPage.delete({
+      where: { id: page.id },
+    });
+
+    await transaction.asset.delete({
+      where: { id: page.asset.id },
+    });
+
+    if (remainingPageIds.length) {
+      await saveChapterPageOrder(transaction, chapter.id, remainingPageIds, user.id);
+    } else {
+      await transaction.chapter.update({
+        where: { id: chapter.id },
+        data: {
+          updatedById: user.id,
+        },
+      });
+    }
+  });
+
+  await storageDriver.delete(page.asset.storageKey, page.asset.scope).catch(() => undefined);
+
+  return ok({
+    chapterId: chapter.id,
+    pageId: page.id,
+  });
+}
+
+export async function removeChapterPageRedirectAction(chapterId: string, pageId: string) {
+  const result = await removeChapterPageAction({
+    chapterId,
+    pageId,
+  });
+
+  if (!result.success) {
+    redirect(`/dashboard/chapters/${chapterId}?error=${encodeURIComponent(result.error)}`);
+  }
+
+  redirect(
+    `/dashboard/chapters/${chapterId}?notice=${encodeURIComponent("Page removed.")}`,
+  );
+}
+
+export async function replaceChapterPageAction(chapterId: string, pageId: string, formData: FormData) {
+  const user = await requirePermission(PermissionBits.CHAPTERS);
+  const parsed = replaceChapterPageInputSchema.safeParse({
+    chapterId,
+    pageId,
+  });
+
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? "Invalid page replace request.");
+  }
+
+  const chapter = await getEditableChapter(chapterId);
+
+  if (!chapter || chapter.deletedAt || chapter.series.deletedAt) {
+    return fail("Chapter not found.");
+  }
+
+  if (chapter.status !== ChapterStatus.DRAFT) {
+    return fail("Only draft chapters can replace pages.");
+  }
+
+  const page = chapter.pages.find((item) => item.id === pageId);
+
+  if (!page) {
+    return fail("Page not found.");
+  }
+
+  const file = formData.get("file");
+
+  if (!isUsableUploadFile(file)) {
+    return fail("A replacement image file is required.");
+  }
+
+  let nextStorageKey: string | null = null;
+
+  try {
+    const parsedImage = await parseUploadedImage(file);
+    nextStorageKey = buildAssetStorageKey(AssetKind.CHAPTER_PAGE, chapter.id, file.name);
+
+    await storageDriver.put({
+      key: nextStorageKey,
+      buffer: parsedImage.buffer,
+      contentType: parsedImage.contentType,
+      scope: AssetScope.DRAFT,
+    });
+
+    await prisma.$transaction([
+      prisma.asset.update({
+        where: { id: page.asset.id },
+        data: {
+          storageDriver: getStorageDriverEnum(),
+          scope: AssetScope.DRAFT,
+          storageKey: nextStorageKey,
+          originalFilename: parsedImage.originalFilename,
+          mimeType: parsedImage.contentType,
+          sizeBytes: parsedImage.sizeBytes,
+          width: parsedImage.width,
+          height: parsedImage.height,
+        },
+      }),
+      prisma.chapterPage.update({
+        where: { id: page.id },
+        data: {
+          width: parsedImage.width ?? 0,
+          height: parsedImage.height ?? 0,
+        },
+      }),
+      prisma.chapter.update({
+        where: { id: chapter.id },
+        data: {
+          updatedById: user.id,
+        },
+      }),
+    ]);
+  } catch (error) {
+    if (nextStorageKey) {
+      await storageDriver.delete(nextStorageKey, AssetScope.DRAFT).catch(() => undefined);
+    }
+
+    return fail(error instanceof Error ? error.message : "Page replace failed.");
+  }
+
+  await storageDriver
+    .delete(page.asset.storageKey, page.asset.scope)
+    .catch(() => undefined);
+
+  return ok({
+    chapterId: chapter.id,
+    pageId: page.id,
+  });
+}
+
+export async function replaceChapterPageRedirectAction(
+  chapterId: string,
+  pageId: string,
+  formData: FormData,
+) {
+  const result = await replaceChapterPageAction(chapterId, pageId, formData);
+
+  if (!result.success) {
+    redirect(`/dashboard/chapters/${chapterId}?error=${encodeURIComponent(result.error)}`);
+  }
+
+  redirect(
+    `/dashboard/chapters/${chapterId}?notice=${encodeURIComponent("Page replaced.")}`,
   );
 }
 

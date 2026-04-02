@@ -3,7 +3,10 @@ import Link from "next/link";
 import { ChapterStatus, RolePreset } from "@/generated/prisma/client";
 
 import {
+  moveChapterPageRedirectAction,
   publishChapterRedirectAction,
+  removeChapterPageRedirectAction,
+  replaceChapterPageRedirectAction,
   reorderChapterPagesRedirectAction,
   softDeleteChapterRedirectAction,
   unpublishChapterRedirectAction,
@@ -48,6 +51,9 @@ export default async function DashboardChapterDetailPage({
   const publishFormAction = publishChapterRedirectAction.bind(null, id);
   const unpublishFormAction = unpublishChapterRedirectAction.bind(null, id);
   const softDeleteFormAction = softDeleteChapterRedirectAction.bind(null, id);
+  const canPreviewDraft =
+    data.chapter.status === ChapterStatus.DRAFT && data.chapter.pages.length > 0;
+  const customOrderFormId = `chapter-page-order:${id}`;
 
   return (
     <div className="space-y-6">
@@ -73,6 +79,14 @@ export default async function DashboardChapterDetailPage({
           >
             Back to chapters
           </Link>
+          {canPreviewDraft ? (
+            <Link
+              href={`/dashboard/chapters/${id}/preview`}
+              className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/20 hover:text-foreground"
+            >
+              Open draft preview
+            </Link>
+          ) : null}
           {data.chapter.status === ChapterStatus.PUBLISHED ? (
             <Link
               href={`/chapter/${data.chapter.id}/${data.chapter.slug}`}
@@ -171,6 +185,21 @@ export default async function DashboardChapterDetailPage({
             </p>
 
             {data.chapter.status === ChapterStatus.DRAFT ? (
+              data.chapter.pages.length ? (
+                <Link
+                  href={`/dashboard/chapters/${id}/preview`}
+                  className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2.5 text-sm text-muted transition hover:border-foreground/20 hover:text-foreground"
+                >
+                  Open draft preview
+                </Link>
+              ) : (
+                <p className="text-sm text-muted">
+                  Upload at least one page before opening the draft preview.
+                </p>
+              )
+            ) : null}
+
+            {data.chapter.status === ChapterStatus.DRAFT ? (
               <form action={publishFormAction}>
                 <SubmitButton pendingLabel="Publishing...">Publish now</SubmitButton>
               </form>
@@ -219,51 +248,134 @@ export default async function DashboardChapterDetailPage({
         </div>
 
         {data.chapter.pages.length ? (
-          <form action={reorderPagesFormAction} className="mt-6 space-y-6">
+          <div className="mt-6 space-y-6">
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {data.chapter.pages.map((page) => (
-                <article key={page.id} className="space-y-3 rounded-[1.5rem] border border-border p-4">
-                  <input type="hidden" name="pageIds" value={page.id} />
-                  <div className="overflow-hidden rounded-[1.25rem] border border-border bg-surface">
-                    {page.previewUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={page.previewUrl}
-                        alt=""
-                        className="h-auto w-full"
-                      />
-                    ) : (
-                      <div className="flex aspect-[3/4] items-center justify-center text-sm text-muted">
-                        Missing preview
+              {data.chapter.pages.map((page, index) => {
+                const moveUpAction = moveChapterPageRedirectAction.bind(null, id, page.id, "up");
+                const moveDownAction = moveChapterPageRedirectAction.bind(null, id, page.id, "down");
+                const removePageAction = removeChapterPageRedirectAction.bind(null, id, page.id);
+                const replacePageAction = replaceChapterPageRedirectAction.bind(null, id, page.id);
+                const isDraft = data.chapter.status === ChapterStatus.DRAFT;
+
+                return (
+                  <article
+                    key={page.id}
+                    className="space-y-4 rounded-[1.5rem] border border-border bg-background/70 p-4"
+                  >
+                    <input type="hidden" name="pageIds" value={page.id} form={customOrderFormId} />
+                    <div className="overflow-hidden rounded-[1.25rem] border border-border bg-surface">
+                      {page.previewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={page.previewUrl} alt="" className="h-auto w-full" />
+                      ) : (
+                        <div className="flex aspect-[3/4] items-center justify-center text-sm text-muted">
+                          Missing preview
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-xs uppercase tracking-[0.16em] text-muted">
+                          Page {index + 1}
+                        </p>
+                        <p className="text-xs uppercase tracking-[0.16em] text-muted">
+                          {page.asset.originalFilename}
+                        </p>
                       </div>
+                      <p className="text-sm text-muted">Current order: {page.pageOrder}</p>
+                    </div>
+
+                    {isDraft ? (
+                      <div className="flex flex-wrap gap-2">
+                        {index > 0 ? (
+                          <form action={moveUpAction}>
+                            <SubmitButton
+                              pendingLabel="Moving..."
+                              className="rounded-full border border-border px-4 py-2 text-sm text-muted transition hover:border-foreground/20 hover:text-foreground disabled:cursor-wait disabled:opacity-70"
+                            >
+                              Move up
+                            </SubmitButton>
+                          </form>
+                        ) : null}
+                        {index < data.chapter.pages.length - 1 ? (
+                          <form action={moveDownAction}>
+                            <SubmitButton
+                              pendingLabel="Moving..."
+                              className="rounded-full border border-border px-4 py-2 text-sm text-muted transition hover:border-foreground/20 hover:text-foreground disabled:cursor-wait disabled:opacity-70"
+                            >
+                              Move down
+                            </SubmitButton>
+                          </form>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    <div className="grid gap-3 md:grid-cols-[110px_minmax(0,1fr)] md:items-center">
+                      <label htmlFor={`pageOrder:${page.id}`} className="text-sm font-medium">
+                        Custom order
+                      </label>
+                      <input
+                        id={`pageOrder:${page.id}`}
+                        name={`pageOrder:${page.id}`}
+                        type="number"
+                        min={1}
+                        defaultValue={page.pageOrder}
+                        form={customOrderFormId}
+                        disabled={!isDraft}
+                        className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-60"
+                      />
+                    </div>
+
+                    {isDraft ? (
+                      <div className="space-y-3 border-t border-border pt-4">
+                        <form action={replacePageAction} className="space-y-3">
+                          <label className="block text-sm font-medium" htmlFor={`replace:${page.id}`}>
+                            Replace page
+                          </label>
+                          <input
+                            id={`replace:${page.id}`}
+                            name="file"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="block w-full text-sm text-muted file:mr-4 file:rounded-full file:border-0 file:bg-foreground file:px-4 file:py-2 file:text-sm file:text-background"
+                          />
+                          <SubmitButton pendingLabel="Replacing...">Replace page</SubmitButton>
+                        </form>
+
+                        <form action={removePageAction}>
+                          <SubmitButton
+                            pendingLabel="Removing..."
+                            className="danger-outline rounded-full px-4 py-2.5 text-sm transition disabled:cursor-wait disabled:opacity-70"
+                          >
+                            Remove page
+                          </SubmitButton>
+                        </form>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted">
+                        Page editing is disabled after publish. Return this chapter to draft to adjust pages.
+                      </p>
                     )}
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-[110px_minmax(0,1fr)] md:items-center">
-                    <label
-                      htmlFor={`pageOrder:${page.id}`}
-                      className="text-sm font-medium"
-                    >
-                      Page order
-                    </label>
-                    <input
-                      id={`pageOrder:${page.id}`}
-                      name={`pageOrder:${page.id}`}
-                      type="number"
-                      min={1}
-                      defaultValue={page.pageOrder}
-                      className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
-                    />
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
 
             {data.chapter.status === ChapterStatus.DRAFT ? (
-              <SubmitButton pendingLabel="Saving order...">Save page order</SubmitButton>
+              <form
+                id={customOrderFormId}
+                action={reorderPagesFormAction}
+                className="flex flex-wrap items-center justify-between gap-3"
+              >
+                <p className="text-sm text-muted">
+                  Use quick move buttons for small adjustments or save custom numeric positions below.
+                </p>
+                <SubmitButton pendingLabel="Saving order...">Save custom order</SubmitButton>
+              </form>
             ) : (
               <p className="text-sm text-muted">Reorder is disabled for published chapters.</p>
             )}
-          </form>
+          </div>
         ) : (
           <p className="mt-6 text-sm text-muted">
             No pages exist yet. Upload the first page set above before publishing this draft.

@@ -19,7 +19,17 @@ function mapAssetUrl(storageKey: string | null | undefined, isDraft = false, ass
 }
 
 export async function getDashboardOverviewData() {
-  const [seriesCount, chapterCount, publishedCount, draftCount, recentChapters] =
+  const [
+    seriesCount,
+    chapterCount,
+    publishedCount,
+    draftCount,
+    draftsWithoutPagesCount,
+    draftsReadyCount,
+    recentChapters,
+    latestDraft,
+    recentSeries,
+  ] =
     await Promise.all([
       prisma.series.count({
         where: {
@@ -43,6 +53,24 @@ export async function getDashboardOverviewData() {
           status: ChapterStatus.DRAFT,
         },
       }),
+      prisma.chapter.count({
+        where: {
+          deletedAt: null,
+          status: ChapterStatus.DRAFT,
+          pages: {
+            none: {},
+          },
+        },
+      }),
+      prisma.chapter.count({
+        where: {
+          deletedAt: null,
+          status: ChapterStatus.DRAFT,
+          pages: {
+            some: {},
+          },
+        },
+      }),
       prisma.chapter.findMany({
         where: {
           deletedAt: null,
@@ -60,6 +88,48 @@ export async function getDashboardOverviewData() {
         },
         take: 6,
       }),
+      prisma.chapter.findFirst({
+        where: {
+          deletedAt: null,
+          status: ChapterStatus.DRAFT,
+        },
+        include: {
+          series: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+          pages: {
+            select: {
+              id: true,
+            },
+          },
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+      }),
+      prisma.series.findMany({
+        where: {
+          deletedAt: null,
+        },
+        include: {
+          chapters: {
+            where: {
+              deletedAt: null,
+            },
+            select: {
+              id: true,
+            },
+          },
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+        take: 4,
+      }),
     ]);
 
   return {
@@ -69,6 +139,22 @@ export async function getDashboardOverviewData() {
       publishedCount,
       draftCount,
     },
+    attention: {
+      draftsWithoutPagesCount,
+      draftsReadyCount,
+    },
+    latestDraft: latestDraft
+      ? {
+          id: latestDraft.id,
+          title: latestDraft.title,
+          slug: latestDraft.slug,
+          number: latestDraft.number.toString(),
+          label: latestDraft.label,
+          updatedAt: latestDraft.updatedAt.toISOString(),
+          pageCount: latestDraft.pages.length,
+          series: latestDraft.series,
+        }
+      : null,
     recentChapters: recentChapters.map((chapter) => ({
       id: chapter.id,
       title: chapter.title,
@@ -78,6 +164,13 @@ export async function getDashboardOverviewData() {
       status: chapter.status,
       updatedAt: chapter.updatedAt.toISOString(),
       series: chapter.series,
+    })),
+    recentSeries: recentSeries.map((series) => ({
+      id: series.id,
+      title: series.title,
+      slug: series.slug,
+      updatedAt: series.updatedAt.toISOString(),
+      chapterCount: series.chapters.length,
     })),
   };
 }
@@ -179,6 +272,7 @@ export async function getDashboardChapterListData() {
       series: {
         select: {
           id: true,
+          deletedAt: true,
           title: true,
           slug: true,
         },
@@ -215,6 +309,7 @@ export async function getDashboardChapterDetailData(id: string) {
       series: {
         select: {
           id: true,
+          deletedAt: true,
           title: true,
           slug: true,
         },
@@ -241,6 +336,57 @@ export async function getDashboardChapterDetailData(id: string) {
       pages: chapter.pages.map((page) => ({
         ...page,
         previewUrl: mapAssetUrl(
+          page.asset.storageKey,
+          page.asset.scope === "DRAFT",
+          page.asset.id,
+        ),
+      })),
+    },
+  };
+}
+
+export async function getDashboardChapterPreviewData(id: string) {
+  const chapter = await prisma.chapter.findUnique({
+    where: { id },
+    include: {
+      series: {
+        select: {
+          id: true,
+          deletedAt: true,
+          title: true,
+          slug: true,
+        },
+      },
+      pages: {
+        include: {
+          asset: true,
+        },
+        orderBy: {
+          pageOrder: "asc",
+        },
+      },
+    },
+  });
+
+  if (!chapter || chapter.deletedAt || chapter.series.deletedAt) {
+    notFound();
+  }
+
+  return {
+    chapter: {
+      id: chapter.id,
+      slug: chapter.slug,
+      title: chapter.title,
+      status: chapter.status,
+      number: chapter.number.toString(),
+      label: chapter.label,
+      series: chapter.series,
+      pages: chapter.pages.map((page) => ({
+        id: page.id,
+        pageOrder: page.pageOrder,
+        width: page.width,
+        height: page.height,
+        imageUrl: mapAssetUrl(
           page.asset.storageKey,
           page.asset.scope === "DRAFT",
           page.asset.id,
