@@ -6,6 +6,7 @@ import { ReadingMode } from "@/generated/prisma/client";
 
 import { saveReadingModePreferenceAction } from "@/app/_actions/preferences/actions";
 import { ChapterReader } from "@/app/_components/chapter-reader";
+import { ReaderNextChapterLink } from "@/app/_components/reader-next-chapter-link";
 import { getOptionalSession } from "@/app/_lib/auth/session";
 import { prisma } from "@/app/_lib/db/client";
 import { getPublicChapterOrThrow } from "@/app/_lib/reader/queries";
@@ -48,6 +49,7 @@ function ChapterNavigation({
   previous,
   next,
   series,
+  nextPrefetchStrategy = "none",
 }: {
   previous: {
     id: string;
@@ -64,6 +66,7 @@ function ChapterNavigation({
   series: {
     slug: string;
   };
+  nextPrefetchStrategy?: "none" | "intent" | "visible";
 }) {
   return (
     <nav
@@ -76,7 +79,7 @@ function ChapterNavigation({
           className="inline-flex min-h-11 items-center text-muted transition hover:text-foreground"
         >
           <span aria-hidden="true" className="mr-2">
-            ←
+            {"<-"}
           </span>
           Previous chapter
         </Link>
@@ -88,15 +91,28 @@ function ChapterNavigation({
         Series
       </Link>
       {next ? (
-        <Link
-          href={`/chapter/${next.id}/${next.slug}`}
-          className="inline-flex min-h-11 items-center text-muted transition hover:text-foreground"
-        >
-          Next chapter
-          <span aria-hidden="true" className="ml-2">
-            →
-          </span>
-        </Link>
+        nextPrefetchStrategy === "none" ? (
+          <Link
+            href={`/chapter/${next.id}/${next.slug}`}
+            className="inline-flex min-h-11 items-center text-muted transition hover:text-foreground"
+          >
+            Next chapter
+            <span aria-hidden="true" className="ml-2">
+              {"->"}
+            </span>
+          </Link>
+        ) : (
+          <ReaderNextChapterLink
+            href={`/chapter/${next.id}/${next.slug}`}
+            prefetchStrategy={nextPrefetchStrategy}
+            className="inline-flex min-h-11 items-center text-muted transition hover:text-foreground"
+          >
+            Next chapter
+            <span aria-hidden="true" className="ml-2">
+              {"->"}
+            </span>
+          </ReaderNextChapterLink>
+        )
       ) : null}
     </nav>
   );
@@ -142,15 +158,16 @@ function ChapterContinuation({
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm">
         {next ? (
-          <Link
+          <ReaderNextChapterLink
             href={`/chapter/${next.id}/${next.slug}`}
+            prefetchStrategy="visible"
             className="inline-flex min-h-11 items-center rounded-full bg-foreground px-4 py-2 text-background transition hover:opacity-90"
           >
             Next chapter
             <span aria-hidden="true" className="ml-2">
-              →
+              {"->"}
             </span>
-          </Link>
+          </ReaderNextChapterLink>
         ) : null}
         <Link
           href={`/series/${series.slug}`}
@@ -210,6 +227,7 @@ export default async function ChapterPage({ params }: PageProps) {
         previous={result.chapter.navigation.previous}
         next={result.chapter.navigation.next}
         series={result.chapter.series}
+        nextPrefetchStrategy="none"
       />
 
       <ChapterReader
@@ -232,6 +250,7 @@ export default async function ChapterPage({ params }: PageProps) {
         previous={result.chapter.navigation.previous}
         next={result.chapter.navigation.next}
         series={result.chapter.series}
+        nextPrefetchStrategy="intent"
       />
     </main>
   );
