@@ -643,13 +643,16 @@ export function ChapterReader({
                 }}
                 width={currentRtlPage.width || undefined}
                 height={currentRtlPage.height || undefined}
-                className={`mx-auto h-auto ${
+                className={`mx-auto ${
                   rtlFitMode === "WIDTH"
                     ? "w-full max-w-none"
-                    : "h-[90dvh] w-auto max-w-full"
+                    : "w-auto max-w-full"
                 } ${rtlPageImageLoaded ? "opacity-100" : "opacity-0"}`}
                 style={{
                   aspectRatio: rtlPageAspectRatio,
+                  ...(rtlFitMode === "WIDTH"
+                    ? null
+                    : { maxHeight: "95dvh", width: "auto", height: "auto" }),
                 }}
               />
             </article>
@@ -684,8 +687,13 @@ export function ChapterReader({
                   className={`mx-auto ${
                     isWebtoon
                       ? "block h-auto w-full"
-                      : "block h-[85dvh] w-auto max-w-full"
+                      : "block w-auto max-w-full"
                   }`}
+                  style={
+                    isWebtoon
+                      ? undefined
+                      : { maxHeight: "95dvh", width: "auto", height: "auto" }
+                  }
                 />
               </article>
             ) : null,
