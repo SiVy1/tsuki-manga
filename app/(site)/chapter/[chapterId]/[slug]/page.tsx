@@ -62,6 +62,58 @@ function ChapterNavigation({
   );
 }
 
+function ChapterContinuation({
+  next,
+  series,
+}: {
+  next: {
+    id: string;
+    slug: string;
+    title: string | null;
+    number: string;
+    label: string | null;
+  } | null;
+  series: {
+    slug: string;
+    title: string;
+  };
+}) {
+  return (
+    <section className="mx-auto max-w-3xl space-y-4 rounded-[1.75rem] border border-border bg-surface px-5 py-6">
+      <div className="space-y-2">
+        <p className="text-xs uppercase tracking-[0.24em] text-muted">
+          End of chapter
+        </p>
+        <h2 className="font-serif text-2xl">
+          {next ? "Continue reading" : "You reached the latest chapter"}
+        </h2>
+        <p className="text-sm text-muted">
+          {next
+            ? `Continue with Chapter ${next.number}${next.label ? ` ${next.label}` : ""}${next.title ? ` - ${next.title}` : ""}.`
+            : `There is no newer published chapter yet. You can return to ${series.title} and browse the full chapter list.`}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-sm">
+        {next ? (
+          <Link
+            href={`/chapter/${next.id}/${next.slug}`}
+            className="rounded-full border border-foreground bg-foreground px-4 py-2 text-background transition hover:opacity-90"
+          >
+            Next chapter
+          </Link>
+        ) : null}
+        <Link
+          href={`/series/${series.slug}`}
+          className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/30 hover:text-foreground"
+        >
+          Back to series
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 export default async function ChapterPage({ params }: PageProps) {
   const { chapterId, slug } = await params;
   const [result, session] = await Promise.all([
@@ -109,12 +161,19 @@ export default async function ChapterPage({ params }: PageProps) {
       />
 
       <ChapterReader
+        chapterId={result.chapter.id}
         defaultMode={defaultMode}
+        enableProgressTracking
         persistToAccount={Boolean(session?.user?.id)}
         pages={result.chapter.pages}
         onPersistReadingMode={
           session?.user?.id ? saveReadingModePreferenceAction : undefined
         }
+      />
+
+      <ChapterContinuation
+        next={result.chapter.navigation.next}
+        series={result.chapter.series}
       />
 
       <ChapterNavigation
