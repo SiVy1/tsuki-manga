@@ -10,7 +10,7 @@ declare global {
 function createPrismaClient() {
   const env = getEnv();
   const connectionString =
-    (env.USE_TEST_DATABASE || env.ENABLE_TEST_AUTH) && env.TEST_DATABASE_URL
+    env.USE_TEST_DATABASE && env.TEST_DATABASE_URL
       ? env.TEST_DATABASE_URL
       : env.DATABASE_URL;
   const adapter = new PrismaPg({ connectionString });

@@ -37,6 +37,22 @@ test("reader has no dashboard access", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
 });
 
+test("test auth can switch from reader to admin", async ({ page }) => {
+  await signInWithTestAuth(page, {
+    providerAccountId: "reader-account",
+    displayName: "Reader",
+  });
+
+  await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
+
+  await signInWithTestAuth(page, {
+    providerAccountId: "admin-account",
+    displayName: "Admin",
+  });
+
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+});
+
 test("editor creates draft and publisher publishes it", async ({ page }) => {
   await signInWithTestAuth(page, {
     providerAccountId: "editor-account",

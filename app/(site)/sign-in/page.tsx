@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 
-import { signIn } from "@/app/_lib/auth";
+import { signIn, signOut } from "@/app/_lib/auth";
 import { getOptionalSession } from "@/app/_lib/auth/session";
 import { canAccessDashboard } from "@/app/_lib/permissions/bits";
 import { getEnv } from "@/app/_lib/settings/env";
@@ -39,8 +39,9 @@ export default async function SignInPage({ searchParams }: PageProps) {
   const [session, params] = await Promise.all([getOptionalSession(), searchParams]);
   const redirectTo = resolveRedirectTarget(params.redirectTo);
   const env = getEnv();
+  const allowTestAuthAccountSwitch = env.ENABLE_TEST_AUTH;
 
-  if (session?.user) {
+  if (session?.user && !allowTestAuthAccountSwitch) {
     redirect(canAccessDashboard(session.user.permissionBits) ? redirectTo : "/");
   }
 
@@ -56,8 +57,15 @@ export default async function SignInPage({ searchParams }: PageProps) {
     "use server";
 
     const target = resolveRedirectTarget(formData.get("redirectTo")?.toString());
+    const currentSession = await getOptionalSession();
 
     try {
+      if (currentSession?.user) {
+        await signOut({
+          redirect: false,
+        });
+      }
+
       await signIn("test-auth", {
         providerAccountId: formData.get("providerAccountId")?.toString() ?? "",
         displayName: formData.get("displayName")?.toString() ?? "",
@@ -72,6 +80,14 @@ export default async function SignInPage({ searchParams }: PageProps) {
 
       throw error;
     }
+  }
+
+  async function signOutAction() {
+    "use server";
+
+    await signOut({
+      redirectTo: "/sign-in",
+    });
   }
 
   return (
@@ -110,6 +126,38 @@ export default async function SignInPage({ searchParams }: PageProps) {
             <p className="notice-warning rounded-2xl px-4 py-3 text-sm">
               {params.error}
             </p>
+          ) : null}
+
+          {session?.user && allowTestAuthAccountSwitch ? (
+            <div className="space-y-4 rounded-2xl border border-border bg-[var(--surface-muted)] px-4 py-4 text-sm">
+              <div className="space-y-1">
+                <p className="font-medium">
+                  Signed in as {session.user.displayName ?? session.user.name ?? "current user"}
+                </p>
+                <p className="text-muted">
+                  Test auth is enabled. You can switch to another seeded account below without
+                  touching your local database on port 5432.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href={canAccessDashboard(session.user.permissionBits) ? "/dashboard" : "/"}
+                  className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/20 hover:text-foreground"
+                >
+                  {canAccessDashboard(session.user.permissionBits)
+                    ? "Open dashboard"
+                    : "Return home"}
+                </Link>
+                <form action={signOutAction}>
+                  <SubmitButton
+                    pendingLabel="Signing out..."
+                    className="inline-flex items-center justify-center rounded-full border border-foreground px-4 py-2 text-sm text-foreground transition hover:bg-foreground hover:text-background disabled:cursor-wait disabled:opacity-70"
+                  >
+                    Sign out first
+                  </SubmitButton>
+                </form>
+              </div>
+            </div>
           ) : null}
 
           {env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET ? (
