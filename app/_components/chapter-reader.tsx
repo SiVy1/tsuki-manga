@@ -638,6 +638,9 @@ export function ChapterReader({
                 key={currentRtlImageKey ?? currentRtlPage.id}
                 src={currentRtlPage.imageUrl}
                 alt=""
+                loading="eager"
+                decoding="sync"
+                fetchPriority="high"
                 onLoad={() => {
                   setLoadedRtlImageKey(currentRtlImageKey);
                 }}
@@ -664,7 +667,7 @@ export function ChapterReader({
             isWebtoon ? "max-w-3xl space-y-0" : "max-w-6xl space-y-6 sm:space-y-10"
           }`}
         >
-          {visiblePages.map((page) =>
+          {visiblePages.map((page, index) =>
             page.imageUrl ? (
               <article
                 key={page.id}
@@ -682,6 +685,9 @@ export function ChapterReader({
                 <img
                   src={page.imageUrl}
                   alt=""
+                  loading={index < 2 ? "eager" : "lazy"}
+                  decoding={index < 2 ? "sync" : "async"}
+                  fetchPriority={index === 0 ? "high" : "auto"}
                   width={page.width || undefined}
                   height={page.height || undefined}
                   className={`mx-auto ${

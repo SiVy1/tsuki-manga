@@ -4,10 +4,11 @@ import { ChapterStatus, SeriesVisibility } from "@/generated/prisma/client";
 
 import { prisma } from "@/app/_lib/db/client";
 import { isMissingDatabaseStructureError } from "@/app/_lib/db/errors";
-import { getAppBaseUrl } from "@/app/_lib/settings/app-url";
+import { buildAbsoluteUrl } from "@/app/_lib/seo/public-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = await getAppBaseUrl();
+  const homeUrl = await buildAbsoluteUrl();
+  const seriesIndexUrl = await buildAbsoluteUrl("series");
 
   try {
     const [series, chapters] = await Promise.all([
@@ -46,17 +47,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return [
       {
-        url: `${baseUrl}/`,
+        url: homeUrl,
       },
       {
-        url: `${baseUrl}/series`,
+        url: seriesIndexUrl,
       },
       ...series.map((entry) => ({
-        url: `${baseUrl}/series/${entry.slug}`,
+        url: `${homeUrl}/series/${entry.slug}`,
         lastModified: entry.updatedAt,
       })),
       ...chapters.map((entry) => ({
-        url: `${baseUrl}/chapter/${entry.id}/${entry.slug}`,
+        url: `${homeUrl}/chapter/${entry.id}/${entry.slug}`,
         lastModified: entry.updatedAt,
       })),
     ];
@@ -64,10 +65,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (isMissingDatabaseStructureError(error)) {
       return [
         {
-          url: `${baseUrl}/`,
+          url: homeUrl,
         },
         {
-          url: `${baseUrl}/series`,
+          url: seriesIndexUrl,
         },
       ];
     }

@@ -37,8 +37,8 @@ export default async function SeriesPage({ params }: PageProps) {
   }
 
   return (
-    <main className="shell space-y-10 py-14">
-      <section className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
+    <main className="shell space-y-12 py-10 sm:space-y-14 sm:py-12 lg:py-14">
+      <section className="grid gap-7 sm:gap-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
         {result.series.coverUrl ? (
           <Image
             src={result.series.coverUrl}
@@ -54,8 +54,8 @@ export default async function SeriesPage({ params }: PageProps) {
           </div>
         )}
 
-        <div className="space-y-6">
-          <div className="space-y-3">
+        <div className="space-y-5 sm:space-y-6">
+          <div className="space-y-2.5 sm:space-y-3">
             <p className="text-xs uppercase tracking-[0.24em] text-muted">Series</p>
             <h1 className="font-serif text-5xl leading-tight">{result.series.title}</h1>
             {result.series.descriptionShort ? (
@@ -84,7 +84,7 @@ export default async function SeriesPage({ params }: PageProps) {
         </div>
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-5">
         <h2 className="font-serif text-3xl">Chapters</h2>
         <div className="panel divide-y divide-border">
           {result.series.chapters.length ? (

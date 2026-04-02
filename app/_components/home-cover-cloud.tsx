@@ -14,13 +14,12 @@ type HomeCoverCloudProps = {
 };
 
 const cloudSlots = [
-  "left-[4%] top-[10%] w-24 -rotate-6",
-  "left-[17%] top-[58%] w-28 rotate-3",
-  "left-[31%] top-[4%] w-24 -rotate-2",
-  "left-[64%] top-[6%] w-28 rotate-6",
-  "left-[78%] top-[28%] w-24 -rotate-4",
-  "left-[70%] top-[62%] w-28 rotate-3",
-  "left-[40%] top-[66%] w-24 -rotate-5",
+  "left-[3.5%] top-[11%] w-20 -rotate-6 xl:w-24",
+  "left-[14%] top-[58%] w-26 rotate-[3deg] xl:w-30",
+  "left-[31%] top-[5%] w-22 -rotate-[2deg] xl:w-25",
+  "right-[24.5%] top-[5%] w-28 rotate-[5deg] xl:w-31",
+  "right-[9%] top-[27%] w-22 -rotate-[4deg] xl:w-25",
+  "right-[15%] top-[66%] w-24 rotate-[4deg] xl:w-28",
 ] as const;
 
 export function HomeCoverCloud({ covers }: HomeCoverCloudProps) {
