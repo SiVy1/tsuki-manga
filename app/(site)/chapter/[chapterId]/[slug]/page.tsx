@@ -71,7 +71,7 @@ function ChapterNavigation({
   return (
     <nav
       aria-label="Chapter navigation"
-      className="flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-border/60 py-3 text-sm"
+      className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-y border-border/60 py-2.5 text-[13px] sm:gap-x-5 sm:gap-y-2 sm:py-3 sm:text-sm"
     >
       {previous ? (
         <Link
@@ -135,8 +135,8 @@ function ChapterContinuation({
   };
 }) {
   return (
-    <section className="mx-auto max-w-3xl space-y-4 border-t border-border/60 pt-8 sm:pt-10">
-      <div className="space-y-2">
+    <section className="mx-auto max-w-3xl space-y-4 border-t border-border/60 pt-10 sm:space-y-5 sm:pt-12">
+      <div className="space-y-2.5 sm:space-y-3">
         <p className="text-xs uppercase tracking-[0.24em] text-muted">
           End of chapter
         </p>
@@ -149,7 +149,7 @@ function ChapterContinuation({
               })
             : "You reached the latest chapter"}
         </h2>
-        <p className="max-w-2xl text-sm leading-6 text-muted">
+        <p className="max-w-2xl text-sm leading-6 text-muted sm:text-[15px]">
           {next
             ? "Continue straight into the next published chapter."
             : `There is no newer published chapter yet. You can return to ${series.title} and browse the full chapter list.`}
@@ -204,20 +204,20 @@ export default async function ChapterPage({ params }: PageProps) {
     currentUser?.readingModePreference ?? ReadingMode.WEBTOON;
 
   return (
-    <main className="shell space-y-8 py-8 sm:space-y-10 sm:py-10">
-      <header className="space-y-2 sm:space-y-3">
+    <main className="shell space-y-6 py-6 sm:space-y-10 sm:py-10">
+      <header className="space-y-1.5 sm:space-y-3">
         <Link
           href={`/series/${result.chapter.series.slug}`}
           className="text-xs uppercase tracking-[0.24em] text-muted"
         >
           {result.chapter.series.title}
         </Link>
-        <h1 className="font-serif text-3xl sm:text-4xl">
+        <h1 className="font-serif text-[1.85rem] leading-tight sm:text-4xl">
           Chapter {result.chapter.number}
           {result.chapter.label ? ` ${result.chapter.label}` : ""}
         </h1>
         {result.chapter.title ? (
-          <p className="max-w-2xl text-sm leading-6 text-muted">
+          <p className="max-w-2xl text-sm leading-6 text-muted sm:text-[15px]">
             {result.chapter.title}
           </p>
         ) : null}

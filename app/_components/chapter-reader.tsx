@@ -501,12 +501,12 @@ export function ChapterReader({
 
   return (
     <div
-      className="space-y-6"
+      className="space-y-5 sm:space-y-6"
       onPointerDownCapture={dismissResumePrompt}
       onWheelCapture={dismissResumePrompt}
       onTouchStartCapture={dismissResumePrompt}
     >
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-[11px] uppercase tracking-[0.18em] text-muted">
@@ -528,7 +528,7 @@ export function ChapterReader({
                       });
                     }
                   }}
-                  className={`rounded-full px-3 py-1.5 text-sm transition ${
+                  className={`rounded-full px-3 py-1.5 text-[13px] transition sm:text-sm ${
                     readingMode === mode.id
                       ? "bg-foreground text-background"
                       : "text-muted hover:text-foreground"
@@ -546,7 +546,7 @@ export function ChapterReader({
       </div>
 
       {resumeProgress ? (
-        <div className="flex flex-wrap items-center gap-3 border-b border-t border-border/60 py-3 text-sm">
+        <div className="flex flex-wrap items-center gap-2.5 border-b border-t border-border/60 py-2.5 text-[13px] sm:gap-3 sm:py-3 sm:text-sm">
           <p className="text-foreground">
             Resume from page {resumeProgress.visiblePageNumber}
           </p>
@@ -570,9 +570,9 @@ export function ChapterReader({
       ) : null}
 
       {isRightToLeft ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-2.5 sm:pb-3">
           <div className="space-y-1">
-            <p className="text-sm text-foreground">
+            <p className="text-[13px] text-foreground sm:text-sm">
               Page {visiblePages.length - currentRtlIndex} of {visiblePages.length}
             </p>
             <p className="text-xs text-muted">
@@ -606,7 +606,7 @@ export function ChapterReader({
       ) : null}
 
       {isRightToLeft ? (
-        <div className="mx-auto flex min-h-[60vh] max-w-5xl items-center justify-center">
+        <div className="mx-auto flex min-h-[52vh] max-w-5xl items-center justify-center py-1 sm:min-h-[60vh] sm:py-2">
           {currentRtlPage?.imageUrl ? (
             <article
               key={currentRtlPage.id}
@@ -661,7 +661,7 @@ export function ChapterReader({
       ) : (
         <div
           className={`mx-auto ${
-            isWebtoon ? "max-w-3xl space-y-0" : "max-w-6xl space-y-10"
+            isWebtoon ? "max-w-3xl space-y-0" : "max-w-6xl space-y-6 sm:space-y-10"
           }`}
         >
           {visiblePages.map((page) =>
@@ -675,7 +675,7 @@ export function ChapterReader({
                 className={`overflow-hidden ${
                   isWebtoon
                     ? "rounded-none border-0 bg-transparent p-0"
-                    : "flex min-h-[85dvh] items-center justify-center rounded-none border-0 bg-transparent p-0"
+                    : "flex min-h-[72dvh] items-center justify-center rounded-none border-0 bg-transparent py-1 sm:min-h-[85dvh] sm:py-0"
                 }`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
