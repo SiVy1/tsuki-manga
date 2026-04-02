@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prisma } from "@/app/_lib/db/client";
+import { getInstanceSettings } from "@/app/_lib/settings/instance";
 
 import {
   deleteTaxonomyTermAction,
@@ -52,6 +53,17 @@ describe("settings and taxonomy actions", () => {
     expect(settings).not.toBeNull();
     expect(settings?.groupName).toBe("Tsuki Scans");
     expect(settings?.keywords).toEqual(["manga", "scanlation"]);
+  });
+
+  it("returns stable default instance settings before anything is saved", async () => {
+    const settings = await getInstanceSettings();
+
+    expect(settings.groupName).toBe("Tsuki Manga");
+    expect(settings.siteTitle).toBe("Tsuki Manga");
+    expect(settings.siteDescription).toBe("Self-hosted manga reading and publishing platform.");
+    expect(settings.socialLinks).toEqual([]);
+    expect(settings.logoAsset).toBeNull();
+    expect(settings.faviconAsset).toBeNull();
   });
 
   it("hard deletes taxonomy terms and detaches series relations", async () => {

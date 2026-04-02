@@ -224,28 +224,38 @@ export default async function DashboardSeriesDetailPage({
 
               <div className="space-y-3">
                 <p className="text-sm font-medium">Taxonomy</p>
-                <div className="flex flex-wrap gap-2">
-                  {data.taxonomyTerms.map((term) => (
-                    <label
-                      key={term.id}
-                      className="flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm text-muted transition hover:border-foreground/20 hover:text-foreground"
-                    >
-                      <input
-                        type="checkbox"
-                        name="taxonomyTermIds"
-                        value={term.id}
-                        defaultChecked={selectedTaxonomyIds.has(term.id)}
-                        className="h-4 w-4 accent-[var(--accent)]"
-                      />
-                      <span>
-                        {term.name}{" "}
-                        <span className="text-xs uppercase tracking-[0.16em]">
-                          {term.type}
+                {data.taxonomyTerms.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {data.taxonomyTerms.map((term) => (
+                      <label
+                        key={term.id}
+                        className="flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm text-muted transition hover:border-foreground/20 hover:text-foreground"
+                      >
+                        <input
+                          type="checkbox"
+                          name="taxonomyTermIds"
+                          value={term.id}
+                          defaultChecked={selectedTaxonomyIds.has(term.id)}
+                          className="h-4 w-4 accent-[var(--accent)]"
+                        />
+                        <span>
+                          {term.name}{" "}
+                          <span className="text-xs uppercase tracking-[0.16em]">
+                            {term.type}
+                          </span>
                         </span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted">
+                    No taxonomy terms exist yet. Add them in{" "}
+                    <Link href="/dashboard/settings" className="underline">
+                      settings
+                    </Link>
+                    .
+                  </p>
+                )}
               </div>
             </div>
 
@@ -358,7 +368,7 @@ export default async function DashboardSeriesDetailPage({
               ))
             ) : (
               <p className="py-4 text-sm text-muted">
-                No chapters yet. Create the first draft on the right.
+                No chapters exist yet. Use the draft form on the right to create the first one.
               </p>
             )}
           </div>

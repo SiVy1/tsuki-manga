@@ -8,12 +8,17 @@ declare global {
 }
 
 function createPrismaClient() {
-  const adapter = new PrismaPg({ connectionString: getEnv().DATABASE_URL });
+  const env = getEnv();
+  const connectionString =
+    (env.USE_TEST_DATABASE || env.ENABLE_TEST_AUTH) && env.TEST_DATABASE_URL
+      ? env.TEST_DATABASE_URL
+      : env.DATABASE_URL;
+  const adapter = new PrismaPg({ connectionString });
 
   return new PrismaClient({
     adapter,
     log:
-      getEnv().NODE_ENV === "development"
+      env.NODE_ENV === "development"
         ? ["query", "warn", "error"]
         : ["warn", "error"],
   });

@@ -68,7 +68,18 @@ export const authConfig: NextAuthConfig = {
 
       return true;
     },
-    async jwt({ token }) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.rolePreset = (user as { rolePreset?: RolePreset }).rolePreset ?? token.rolePreset;
+        token.permissionBits =
+          (user as { permissionBits?: number }).permissionBits ?? token.permissionBits;
+        token.displayName =
+          (user as { displayName?: string | null }).displayName ?? token.displayName;
+        token.themePreference =
+          (user as { themePreference?: ThemeMode | null }).themePreference ??
+          token.themePreference;
+      }
+
       if (!token.sub) {
         return token;
       }

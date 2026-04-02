@@ -5,6 +5,7 @@ import { AssetKind, AssetScope } from "@/generated/prisma/client";
 import { prisma } from "@/app/_lib/db/client";
 import { requireAdmin, requirePermission } from "@/app/_lib/auth/session";
 import { PermissionBits } from "@/app/_lib/permissions/bits";
+import { defaultInstanceSettings } from "@/app/_lib/settings/instance";
 import { isUsableUploadFile, parseUploadedImage } from "@/app/_lib/storage/images";
 import { buildAssetStorageKey } from "@/app/_lib/storage/keys";
 import { storageDriver, getStorageDriverEnum } from "@/app/_lib/storage";
@@ -27,10 +28,7 @@ async function getOrCreateInstanceSettings() {
 
   return prisma.instanceSettings.create({
     data: {
-      groupName: "Tsuki Manga",
-      siteTitle: "Tsuki Manga",
-      siteDescription: "Self-hosted manga reading and publishing platform.",
-      keywords: [],
+      ...defaultInstanceSettings,
     },
   });
 }

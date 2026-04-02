@@ -4,10 +4,9 @@ import { defineConfig } from "@playwright/test";
 dotenv.config();
 
 const baseURL = "http://127.0.0.1:3000";
-const databaseUrl =
+const testDatabaseUrl =
   process.env.TEST_DATABASE_URL ??
-  process.env.DATABASE_URL ??
-  "postgresql://postgres:postgres@localhost:5432/tsuki_manga_test";
+  "postgresql://postgres:postgres@localhost:5433/tsuki_manga_test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -26,7 +25,9 @@ export default defineConfig({
     env: {
       ...process.env,
       APP_URL: baseURL,
-      DATABASE_URL: databaseUrl,
+      DATABASE_URL: testDatabaseUrl,
+      TEST_DATABASE_URL: testDatabaseUrl,
+      USE_TEST_DATABASE: "true",
       ENABLE_TEST_AUTH: "true",
       STORAGE_DRIVER: "local",
     },

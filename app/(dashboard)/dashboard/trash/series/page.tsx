@@ -87,7 +87,12 @@ export default async function DashboardTrashSeriesPage({
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted">No deleted series.</p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted">No deleted series are waiting in the trash.</p>
+              <Link href="/dashboard/series" className="text-sm underline">
+                Back to series
+              </Link>
+            </div>
           )}
         </div>
       </section>

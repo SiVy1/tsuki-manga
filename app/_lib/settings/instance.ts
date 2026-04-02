@@ -1,6 +1,6 @@
 import { prisma } from "@/app/_lib/db/client";
 
-const defaultInstanceSettings = {
+export const defaultInstanceSettings = {
   groupName: "Tsuki Manga",
   groupDescription: null,
   siteTitle: "Tsuki Manga",

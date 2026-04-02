@@ -24,6 +24,10 @@ const requiredEnv = [
   "S3_PUBLIC_BASE_URL",
 ];
 
+const testDatabaseUrl =
+  process.env.TEST_DATABASE_URL ??
+  "postgresql://postgres:postgres@localhost:5433/tsuki_manga_test";
+
 for (const key of requiredEnv) {
   if (!process.env[key]) {
     console.error(`Missing ${key}. S3 integration tests require MinIO/S3 configuration.`);
@@ -34,6 +38,9 @@ for (const key of requiredEnv) {
 const sharedEnv = {
   ...process.env,
   NODE_ENV: "test",
+  TEST_DATABASE_URL: testDatabaseUrl,
+  DATABASE_URL: testDatabaseUrl,
+  USE_TEST_DATABASE: "true",
   STORAGE_DRIVER: "s3",
 };
 

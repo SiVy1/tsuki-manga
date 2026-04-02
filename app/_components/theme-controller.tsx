@@ -13,9 +13,13 @@ import type { ThemeModeValue } from "@/app/_lib/theme/shared";
 
 type ThemeControllerProps = {
   defaultThemeMode: ThemeModeValue;
+  persistAccountTheme?: boolean;
 };
 
-export function ThemeController({ defaultThemeMode }: ThemeControllerProps) {
+export function ThemeController({
+  defaultThemeMode,
+  persistAccountTheme = false,
+}: ThemeControllerProps) {
   const themeState = useSyncExternalStore(
     subscribeToTheme,
     () => resolveThemeSnapshot(defaultThemeMode),
@@ -23,8 +27,8 @@ export function ThemeController({ defaultThemeMode }: ThemeControllerProps) {
   );
 
   useEffect(() => {
-    syncStoredThemeMode(defaultThemeMode === "SYSTEM" ? null : defaultThemeMode);
-  }, [defaultThemeMode]);
+    syncStoredThemeMode(defaultThemeMode, persistAccountTheme);
+  }, [defaultThemeMode, persistAccountTheme]);
 
   useEffect(() => {
     applyResolvedTheme(themeState.resolvedTheme);

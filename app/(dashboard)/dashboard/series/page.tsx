@@ -90,7 +90,16 @@ export default async function DashboardSeriesPage() {
               </Link>
             ))
           ) : (
-            <div className="px-5 py-10 text-sm text-muted">No series yet.</div>
+            <div className="space-y-3 px-5 py-10">
+              <p className="text-sm text-muted">
+                No series exist yet. Create the first one to open the publishing flow.
+              </p>
+              <div>
+                <Link href="/dashboard/series/new" className="text-sm underline">
+                  Create a series
+                </Link>
+              </div>
+            </div>
           )}
         </div>
       </section>

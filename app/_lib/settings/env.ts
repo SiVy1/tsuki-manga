@@ -13,11 +13,17 @@ const envSchema = z.object({
     .optional()
     .transform((value) => value === "true" || value === "1" || value === "TRUE")
     .default(false),
+  USE_TEST_DATABASE: z
+    .enum(["true", "false", "1", "0", "TRUE", "FALSE"])
+    .optional()
+    .transform((value) => value === "true" || value === "1" || value === "TRUE")
+    .default(false),
   TEST_AUTH_SHARED_SECRET: z.string().optional().or(z.literal("")),
+  TEST_DATABASE_URL: z.string().optional().or(z.literal("")),
   DATABASE_URL: z
     .string()
     .min(1)
-    .default("postgresql://postgres:postgres@localhost:5432/tsuki_manga"),
+    .default("postgresql://postgres:postgres@localhost:5433/tsuki_manga"),
   STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
   S3_ENDPOINT: z.string().url().optional().or(z.literal("")),
   S3_REGION: z.string().optional().or(z.literal("")),

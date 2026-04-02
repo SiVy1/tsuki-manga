@@ -39,7 +39,7 @@ describe("users and permissions actions", () => {
       throw new Error("list users failed");
     }
 
-    expect(result.data).toHaveLength(3);
+    expect(result.data).toHaveLength(4);
   });
 
   it("blocks self escalation and allows assigning presets to others", async () => {

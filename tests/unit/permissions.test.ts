@@ -37,4 +37,9 @@ describe("permission preset mapping", () => {
     expect(hasPermission(adminBits, PermissionBits.PUBLISH)).toBe(true);
     expect(canAccessDashboard(adminBits)).toBe(true);
   });
+
+  it("treats missing permission bits as no access", () => {
+    expect(canAccessDashboard(undefined as never)).toBe(false);
+    expect(hasPermission(undefined as never, PermissionBits.SERIES)).toBe(false);
+  });
 });

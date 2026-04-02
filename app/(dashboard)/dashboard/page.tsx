@@ -105,7 +105,15 @@ export default async function DashboardPage() {
                 </Link>
               ))
             ) : (
-              <p className="py-4 text-sm text-muted">No drafts.</p>
+              <div className="space-y-3 py-4">
+                <p className="text-sm text-muted">
+                  No drafts need work yet. Start a new series or create the first chapter from an
+                  existing series.
+                </p>
+                <Link href="/dashboard/series/new" className="text-sm underline">
+                  Create a series
+                </Link>
+              </div>
             )}
           </div>
         </article>
@@ -150,7 +158,14 @@ export default async function DashboardPage() {
                 </Link>
               ))
             ) : (
-              <p className="py-4 text-sm text-muted">No published chapters.</p>
+              <div className="space-y-3 py-4">
+                <p className="text-sm text-muted">
+                  Nothing is live yet. Publish a finished draft to see it here.
+                </p>
+                <Link href="/dashboard/chapters" className="text-sm underline">
+                  Review chapters
+                </Link>
+              </div>
             )}
           </div>
         </article>
@@ -232,7 +247,14 @@ export default async function DashboardPage() {
               </Link>
             ))
           ) : (
-            <p className="py-4 text-sm text-muted">No chapters yet.</p>
+            <div className="space-y-3 py-4">
+              <p className="text-sm text-muted">
+                No chapters exist yet. Create the first series to start the editorial flow.
+              </p>
+              <Link href="/dashboard/series/new" className="text-sm underline">
+                Create a series
+              </Link>
+            </div>
           )}
         </div>
       </section>

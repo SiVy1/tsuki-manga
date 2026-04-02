@@ -37,9 +37,13 @@ export function getPermissionBitsForPreset(rolePreset: RolePreset) {
 }
 
 export function hasPermission(permissionBits: number, permission: PermissionBit) {
+  if (typeof permissionBits !== "number") {
+    return false;
+  }
+
   return (permissionBits & permission) === permission;
 }
 
 export function canAccessDashboard(permissionBits: number) {
-  return permissionBits !== 0;
+  return typeof permissionBits === "number" && permissionBits !== 0;
 }

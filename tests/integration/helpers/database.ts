@@ -7,6 +7,10 @@ import { prisma } from "@/app/_lib/db/client";
 import { getPermissionBitsForPreset } from "@/app/_lib/permissions/bits";
 
 export const testUsers = {
+  reader: {
+    id: "00000000-0000-4000-8000-000000000000",
+    rolePreset: RolePreset.READER,
+  },
   admin: {
     id: "00000000-0000-4000-8000-000000000001",
     rolePreset: RolePreset.ADMIN,
@@ -45,19 +49,17 @@ export async function resetDatabase() {
 }
 
 export async function seedDefaultUsers() {
-  await Promise.all(
-    Object.values(testUsers).map((user) =>
-      prisma.user.create({
-        data: {
-          id: user.id,
-          displayName: user.rolePreset.toLowerCase(),
-          name: user.rolePreset.toLowerCase(),
-          rolePreset: user.rolePreset,
-          permissionBits: getPermissionBitsForPreset(user.rolePreset),
-        },
-      }),
-    ),
-  );
+  for (const user of Object.values(testUsers)) {
+    await prisma.user.create({
+      data: {
+        id: user.id,
+        displayName: user.rolePreset.toLowerCase(),
+        name: user.rolePreset.toLowerCase(),
+        rolePreset: user.rolePreset,
+        permissionBits: getPermissionBitsForPreset(user.rolePreset),
+      },
+    });
+  }
 }
 
 export async function resetDatabaseAndStorage() {

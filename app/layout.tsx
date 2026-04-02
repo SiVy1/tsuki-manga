@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Newsreader, Raleway } from "next/font/google";
+import Script from "next/script";
 
 import { getOptionalSession } from "@/app/_lib/auth/session";
 import { themeModeStorageKey, type ThemeModeValue } from "@/app/_lib/theme/shared";
@@ -26,11 +27,15 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-function buildThemeInitScript(defaultThemeMode: ThemeModeValue) {
+function buildThemeInitScript(
+  defaultThemeMode: ThemeModeValue,
+  persistAccountTheme: boolean,
+) {
   return `
     (() => {
       const storageKey = ${JSON.stringify(themeModeStorageKey)};
       const defaultMode = ${JSON.stringify(defaultThemeMode)};
+      const persistAccountTheme = ${JSON.stringify(persistAccountTheme)};
       const isThemeMode = (value) => value === "SYSTEM" || value === "LIGHT" || value === "DARK";
       const storedMode = (() => {
         try {
@@ -40,8 +45,12 @@ function buildThemeInitScript(defaultThemeMode: ThemeModeValue) {
           return null;
         }
       })();
-      const themeMode = storedMode ?? defaultMode;
-      if (!storedMode && defaultMode !== "SYSTEM") {
+      const themeMode = persistAccountTheme ? defaultMode : (storedMode ?? defaultMode);
+      if (persistAccountTheme) {
+        try {
+          window.localStorage.setItem(storageKey, defaultMode);
+        } catch {}
+      } else if (!storedMode && defaultMode !== "SYSTEM") {
         try {
           window.localStorage.setItem(storageKey, defaultMode);
         } catch {}
@@ -65,6 +74,7 @@ export default async function RootLayout({
 }>) {
   const session = await getOptionalSession();
   const defaultThemeMode = (session?.user?.themePreference ?? "SYSTEM") as ThemeModeValue;
+  const persistAccountTheme = Boolean(session?.user);
 
   return (
     <html
@@ -74,14 +84,15 @@ export default async function RootLayout({
       className={`${newsreader.variable} ${raleway.variable} h-full antialiased`}
     >
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: buildThemeInitScript(defaultThemeMode),
-          }}
-        />
+        <Script id="theme-init" strategy="beforeInteractive">
+          {buildThemeInitScript(defaultThemeMode, persistAccountTheme)}
+        </Script>
       </head>
       <body className="min-h-full flex flex-col">
-        <ThemeController defaultThemeMode={defaultThemeMode} />
+        <ThemeController
+          defaultThemeMode={defaultThemeMode}
+          persistAccountTheme={persistAccountTheme}
+        />
         {children}
       </body>
     </html>

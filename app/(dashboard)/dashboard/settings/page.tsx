@@ -348,6 +348,12 @@ export default async function DashboardSettingsPage({ searchParams }: PageProps)
         </div>
 
         <div className="mt-6 space-y-4">
+          {data.instanceSettings.socialLinks.length === 0 ? (
+            <p className="text-sm text-muted">
+              No social links yet. Add the first public link below.
+            </p>
+          ) : null}
+
           {data.instanceSettings.socialLinks.map((link) => (
             <div key={link.id} className="rounded-[1.5rem] border border-border p-4">
               <form action={updateSocialLinkFormAction} className="grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_180px]">
@@ -434,6 +440,12 @@ export default async function DashboardSettingsPage({ searchParams }: PageProps)
           </div>
 
           <div className="mt-6 space-y-4">
+            {data.taxonomyTerms.length === 0 ? (
+              <p className="text-sm text-muted">
+                No terms exist yet. Add the first genre or tag below.
+              </p>
+            ) : null}
+
             {data.taxonomyTerms.map((term) => (
               <div key={term.id} className="rounded-[1.5rem] border border-border p-4">
                 <form action={updateTaxonomyFormAction} className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_180px_160px]">

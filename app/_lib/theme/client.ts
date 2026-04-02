@@ -117,12 +117,17 @@ export function setStoredThemeMode(themeMode: ThemeModeValue) {
   notifyThemeListeners();
 }
 
-export function syncStoredThemeMode(themeMode: ThemeModeValue | null | undefined) {
+export function syncStoredThemeMode(
+  themeMode: ThemeModeValue | null | undefined,
+  overwriteExisting = false,
+) {
   if (!themeMode || typeof window === "undefined") {
     return;
   }
 
-  if (getStoredThemeMode() === null) {
+  const currentThemeMode = getStoredThemeMode();
+
+  if (overwriteExisting || currentThemeMode === null) {
     window.localStorage.setItem(themeModeStorageKey, themeMode);
     notifyThemeListeners();
   }

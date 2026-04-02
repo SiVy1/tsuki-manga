@@ -265,7 +265,9 @@ export default async function DashboardChapterDetailPage({
             )}
           </form>
         ) : (
-          <p className="mt-6 text-sm text-muted">No pages yet.</p>
+          <p className="mt-6 text-sm text-muted">
+            No pages exist yet. Upload the first page set above before publishing this draft.
+          </p>
         )}
       </section>
     </div>

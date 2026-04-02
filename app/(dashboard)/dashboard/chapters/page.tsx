@@ -64,8 +64,16 @@ export default async function DashboardChaptersPage() {
               </Link>
             ))
           ) : (
-            <div className="px-5 py-10 text-sm text-muted">
-              No chapters exist yet. Create a series first, then start the first draft.
+            <div className="space-y-3 px-5 py-10">
+              <p className="text-sm text-muted">
+                No chapters exist yet. Create a series first, then open its detail page to start
+                the first draft.
+              </p>
+              <div>
+                <Link href="/dashboard/series/new" className="text-sm underline">
+                  Create a series
+                </Link>
+              </div>
             </div>
           )}
         </div>

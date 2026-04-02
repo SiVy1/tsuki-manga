@@ -11,11 +11,13 @@ loadEnv({ path: path.join(repoRoot, ".env.local"), override: true });
 loadEnv({ path: path.join(repoRoot, ".env.test"), override: true });
 loadEnv({ path: path.join(repoRoot, ".env.test.local"), override: true });
 
-const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+const testDatabaseUrl =
+  process.env.TEST_DATABASE_URL ??
+  "postgresql://postgres:postgres@localhost:5433/tsuki_manga_test";
 
 if (!testDatabaseUrl) {
   console.error(
-    "Missing TEST_DATABASE_URL or DATABASE_URL. Integration tests require a real PostgreSQL database.",
+    "Missing TEST_DATABASE_URL. Integration tests require the isolated project test database.",
   );
   process.exit(1);
 }
@@ -23,7 +25,9 @@ if (!testDatabaseUrl) {
 const sharedEnv = {
   ...process.env,
   NODE_ENV: "test",
+  TEST_DATABASE_URL: testDatabaseUrl,
   DATABASE_URL: testDatabaseUrl,
+  USE_TEST_DATABASE: "true",
 };
 
 async function ensureDatabaseReachable() {

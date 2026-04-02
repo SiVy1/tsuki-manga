@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveServerThemeSnapshot, resolveThemeSnapshot } from "@/app/_lib/theme/client";
+import {
+  resolveServerThemeSnapshot,
+  resolveThemeSnapshot,
+  syncStoredThemeMode,
+} from "@/app/_lib/theme/client";
 import { resolveThemeMode } from "@/app/_lib/theme/shared";
 
 describe("theme resolution", () => {
@@ -103,5 +107,47 @@ describe("theme resolution", () => {
       mode: "DARK",
       resolvedTheme: "dark",
     });
+  });
+
+  it("can overwrite a stale stored mode when the account preference should win", () => {
+    const previousWindow = globalThis.window;
+    const localStorageState = new Map<string, string>([["tsuki-theme-mode", "DARK"]]);
+
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        localStorage: {
+          getItem(key: string) {
+            return localStorageState.get(key) ?? null;
+          },
+          setItem(key: string, value: string) {
+            localStorageState.set(key, value);
+          },
+        },
+        matchMedia() {
+          return {
+            matches: false,
+            addEventListener() {},
+            removeEventListener() {},
+          };
+        },
+        addEventListener() {},
+        removeEventListener() {},
+      },
+    });
+
+    try {
+      syncStoredThemeMode("LIGHT", true);
+      expect(localStorageState.get("tsuki-theme-mode")).toBe("LIGHT");
+    } finally {
+      if (previousWindow === undefined) {
+        Reflect.deleteProperty(globalThis, "window");
+      } else {
+        Object.defineProperty(globalThis, "window", {
+          configurable: true,
+          value: previousWindow,
+        });
+      }
+    }
   });
 });

@@ -110,7 +110,12 @@ export default async function DashboardTrashChaptersPage({
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted">No deleted chapters.</p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted">No deleted chapters are waiting in the trash.</p>
+              <Link href="/dashboard/chapters" className="text-sm underline">
+                Back to chapters
+              </Link>
+            </div>
           )}
         </div>
       </section>
