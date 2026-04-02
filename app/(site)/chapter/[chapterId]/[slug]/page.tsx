@@ -20,6 +20,17 @@ type PageProps = {
   }>;
 };
 
+function formatChapterLabel(input: {
+  number: string;
+  label?: string | null;
+  title?: string | null;
+}) {
+  const suffix = input.label ? ` ${input.label}` : "";
+  const title = input.title ? ` - ${input.title}` : "";
+
+  return `Chapter ${input.number}${suffix}${title}`;
+}
+
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
@@ -36,26 +47,55 @@ export async function generateMetadata({
 function ChapterNavigation({
   previous,
   next,
+  series,
 }: {
-  previous: { id: string; slug: string } | null;
-  next: { id: string; slug: string } | null;
+  previous: {
+    id: string;
+    slug: string;
+    number: string;
+    label: string | null;
+  } | null;
+  next: {
+    id: string;
+    slug: string;
+    number: string;
+    label: string | null;
+  } | null;
+  series: {
+    slug: string;
+  };
 }) {
   return (
-    <nav className="flex flex-wrap gap-3 text-sm">
+    <nav
+      aria-label="Chapter navigation"
+      className="flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-border/60 py-3 text-sm"
+    >
       {previous ? (
         <Link
           href={`/chapter/${previous.id}/${previous.slug}`}
-          className="rounded-full border border-border px-4 py-2"
+          className="inline-flex min-h-11 items-center text-muted transition hover:text-foreground"
         >
-          Previous
+          <span aria-hidden="true" className="mr-2">
+            ←
+          </span>
+          Previous chapter
         </Link>
       ) : null}
+      <Link
+        href={`/series/${series.slug}`}
+        className="inline-flex min-h-11 items-center text-foreground transition hover:text-muted"
+      >
+        Series
+      </Link>
       {next ? (
         <Link
           href={`/chapter/${next.id}/${next.slug}`}
-          className="rounded-full border border-border px-4 py-2"
+          className="inline-flex min-h-11 items-center text-muted transition hover:text-foreground"
         >
-          Next
+          Next chapter
+          <span aria-hidden="true" className="ml-2">
+            →
+          </span>
         </Link>
       ) : null}
     </nav>
@@ -79,33 +119,42 @@ function ChapterContinuation({
   };
 }) {
   return (
-    <section className="mx-auto max-w-3xl space-y-4 rounded-[1.75rem] border border-border bg-surface px-5 py-6">
+    <section className="mx-auto max-w-3xl space-y-4 border-t border-border/60 pt-8 sm:pt-10">
       <div className="space-y-2">
         <p className="text-xs uppercase tracking-[0.24em] text-muted">
           End of chapter
         </p>
-        <h2 className="font-serif text-2xl">
-          {next ? "Continue reading" : "You reached the latest chapter"}
-        </h2>
-        <p className="text-sm text-muted">
+        <h2 className="font-serif text-2xl sm:text-3xl">
           {next
-            ? `Continue with Chapter ${next.number}${next.label ? ` ${next.label}` : ""}${next.title ? ` - ${next.title}` : ""}.`
+            ? formatChapterLabel({
+                number: next.number,
+                label: next.label,
+                title: next.title,
+              })
+            : "You reached the latest chapter"}
+        </h2>
+        <p className="max-w-2xl text-sm leading-6 text-muted">
+          {next
+            ? "Continue straight into the next published chapter."
             : `There is no newer published chapter yet. You can return to ${series.title} and browse the full chapter list.`}
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-3 text-sm">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm">
         {next ? (
           <Link
             href={`/chapter/${next.id}/${next.slug}`}
-            className="rounded-full border border-foreground bg-foreground px-4 py-2 text-background transition hover:opacity-90"
+            className="inline-flex min-h-11 items-center rounded-full bg-foreground px-4 py-2 text-background transition hover:opacity-90"
           >
             Next chapter
+            <span aria-hidden="true" className="ml-2">
+              →
+            </span>
           </Link>
         ) : null}
         <Link
           href={`/series/${series.slug}`}
-          className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/30 hover:text-foreground"
+          className="inline-flex min-h-11 items-center text-muted transition hover:text-foreground"
         >
           Back to series
         </Link>
@@ -138,26 +187,29 @@ export default async function ChapterPage({ params }: PageProps) {
     currentUser?.readingModePreference ?? ReadingMode.WEBTOON;
 
   return (
-    <main className="shell space-y-8 py-10">
-      <header className="space-y-2">
+    <main className="shell space-y-8 py-8 sm:space-y-10 sm:py-10">
+      <header className="space-y-2 sm:space-y-3">
         <Link
           href={`/series/${result.chapter.series.slug}`}
           className="text-xs uppercase tracking-[0.24em] text-muted"
         >
           {result.chapter.series.title}
         </Link>
-        <h1 className="font-serif text-4xl">
+        <h1 className="font-serif text-3xl sm:text-4xl">
           Chapter {result.chapter.number}
           {result.chapter.label ? ` ${result.chapter.label}` : ""}
         </h1>
         {result.chapter.title ? (
-          <p className="text-sm text-muted">{result.chapter.title}</p>
+          <p className="max-w-2xl text-sm leading-6 text-muted">
+            {result.chapter.title}
+          </p>
         ) : null}
       </header>
 
       <ChapterNavigation
         previous={result.chapter.navigation.previous}
         next={result.chapter.navigation.next}
+        series={result.chapter.series}
       />
 
       <ChapterReader
@@ -179,6 +231,7 @@ export default async function ChapterPage({ params }: PageProps) {
       <ChapterNavigation
         previous={result.chapter.navigation.previous}
         next={result.chapter.navigation.next}
+        series={result.chapter.series}
       />
     </main>
   );
