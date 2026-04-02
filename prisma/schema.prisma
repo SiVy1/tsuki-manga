@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RolePreset {
+  READER
+  EDITOR
+  PUBLISHER
+  ADMIN
+}
+
+enum TaxonomyType {
+  GENRE
+  TAG
+}
+
+enum SeriesVisibility {
+  PUBLIC
+  HIDDEN
+}
+
+enum ChapterStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum AssetKind {
+  SERIES_COVER
+  CHAPTER_PAGE
+  INSTANCE_LOGO
+  INSTANCE_FAVICON
+}
+
+enum AssetScope {
+  PUBLIC
+  DRAFT
+}
+
+enum StorageDriver {
+  LOCAL
+  S3
+}
+
+enum ReadingMode {
+  WEBTOON
+  VERTICAL
+  RIGHT_TO_LEFT
+}
+
+enum ThemeMode {
+  SYSTEM
+  LIGHT
+  DARK
+}
+
+model User {
+  id                    String         @id @default(uuid()) @db.Uuid
+  name                  String?
+  email                 String?        @unique
+  emailVerified         DateTime?
+  image                 String?
+  displayName           String?
+  rolePreset            RolePreset     @default(READER)
+  permissionBits        Int            @default(0)
+  readingModePreference ReadingMode?
+  themePreference       ThemeMode?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  accounts              Account[]
+  sessions              Session[]
+  createdSeries         Series[]       @relation("SeriesCreatedBy")
+  updatedSeries         Series[]       @relation("SeriesUpdatedBy")
+  createdChapters       Chapter[]      @relation("ChapterCreatedBy")
+  updatedChapters       Chapter[]      @relation("ChapterUpdatedBy")
+  createdAssets         Asset[]        @relation("AssetCreatedBy")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String   @db.Uuid
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model InstanceSettings {
+  id               String       @id @default(uuid()) @db.Uuid
+  groupName        String
+  groupDescription String?
+  siteTitle        String
+  siteDescription  String
+  keywords         String[]
+  logoAssetId      String?      @unique @db.Uuid
+  faviconAssetId   String?      @unique @db.Uuid
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  logoAsset        Asset?       @relation("InstanceLogoAsset", fields: [logoAssetId], references: [id], onDelete: SetNull)
+  faviconAsset     Asset?       @relation("InstanceFaviconAsset", fields: [faviconAssetId], references: [id], onDelete: SetNull)
+  socialLinks      SocialLink[]
+}
+
+model SocialLink {
+  id                 String           @id @default(uuid()) @db.Uuid
+  instanceSettingsId String           @db.Uuid
+  label              String
+  url                String
+  iconType           String?
+  iconSvg            String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  instanceSettings InstanceSettings @relation(fields: [instanceSettingsId], references: [id], onDelete: Cascade)
+}
+
+model TaxonomyTerm {
+  id        String        @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String        @unique
+  type      TaxonomyType
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  series    Series[]
+}
+
+model Series {
+  id               String           @id @default(uuid()) @db.Uuid
+  title            String
+  slug             String           @unique
+  descriptionShort String?
+  descriptionLong  String?
+  coverAssetId     String?          @unique @db.Uuid
+  visibility       SeriesVisibility @default(PUBLIC)
+  createdById      String           @db.Uuid
+  updatedById      String           @db.Uuid
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  coverAsset       Asset?           @relation("SeriesCoverAsset", fields: [coverAssetId], references: [id], onDelete: SetNull)
+  createdBy        User             @relation("SeriesCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy        User             @relation("SeriesUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  chapters         Chapter[]
+  slugHistory      SeriesSlugHistory[]
+  taxonomyTerms    TaxonomyTerm[]
+
+  @@index([deletedAt])
+  @@index([visibility, deletedAt])
+}
+
+model SeriesSlugHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  seriesId  String   @db.Uuid
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+}
+
+model Chapter {
+  id          String        @id @default(uuid()) @db.Uuid
+  seriesId    String        @db.Uuid
+  slug        String        @unique
+  number      Decimal       @db.Decimal(10, 2)
+  label       String?
+  title       String?
+  status      ChapterStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdById String        @db.Uuid
+  updatedById String        @db.Uuid
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  series      Series        @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+  createdBy   User          @relation("ChapterCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy   User          @relation("ChapterUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  pages       ChapterPage[]
+  slugHistory ChapterSlugHistory[]
+
+  @@unique([seriesId, number, label])
+  @@index([status, publishedAt, deletedAt])
+  @@index([seriesId, deletedAt])
+}
+
+model ChapterSlugHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  chapterId String   @db.Uuid
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+}
+
+model ChapterPage {
+  id        String   @id @default(uuid()) @db.Uuid
+  chapterId String   @db.Uuid
+  assetId   String   @unique @db.Uuid
+  pageOrder Int
+  width     Int
+  height    Int
+  createdAt DateTime @default(now())
+
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([chapterId, pageOrder])
+}
+
+model Asset {
+  id               String        @id @default(uuid()) @db.Uuid
+  storageDriver    StorageDriver
+  kind             AssetKind
+  scope            AssetScope
+  storageKey       String        @unique
+  originalFilename String
+  mimeType         String
+  sizeBytes        BigInt
+  width            Int?
+  height           Int?
+  createdById      String?       @db.Uuid
+  createdAt        DateTime      @default(now())
+
+  createdBy        User?         @relation("AssetCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  chapterPage      ChapterPage?
+  seriesCoverFor   Series?       @relation("SeriesCoverAsset")
+  logoFor          InstanceSettings? @relation("InstanceLogoAsset")
+  faviconFor       InstanceSettings? @relation("InstanceFaviconAsset")
+}
