@@ -6,6 +6,7 @@ import {
   moveChapterPageRedirectAction,
   publishChapterRedirectAction,
   removeChapterPageRedirectAction,
+  removeChapterPagesRedirectAction,
   replaceChapterPageRedirectAction,
   reorderChapterPagesRedirectAction,
   softDeleteChapterRedirectAction,
@@ -17,6 +18,7 @@ import { requireDashboardUser, requirePermission } from "@/app/_lib/auth/session
 import { getDashboardChapterDetailData } from "@/app/_lib/dashboard/queries";
 import { PermissionBits } from "@/app/_lib/permissions/bits";
 import { formatDateTime } from "@/app/_lib/utils/formatting";
+import { ChapterPageBatchToolbar } from "@/app/_components/chapter-page-batch-toolbar";
 import { ChapterUploadDropzone } from "@/app/_components/chapter-upload-dropzone";
 import { SubmitButton } from "@/app/_components/submit-button";
 
@@ -48,11 +50,13 @@ export default async function DashboardChapterDetailPage({
   );
   const uploadPagesFormAction = uploadChapterPagesRedirectAction.bind(null, id);
   const reorderPagesFormAction = reorderChapterPagesRedirectAction.bind(null, id);
+  const removePagesFormAction = removeChapterPagesRedirectAction.bind(null, id);
   const publishFormAction = publishChapterRedirectAction.bind(null, id);
   const unpublishFormAction = unpublishChapterRedirectAction.bind(null, id);
   const softDeleteFormAction = softDeleteChapterRedirectAction.bind(null, id);
   const canPreviewDraft =
     data.chapter.status === ChapterStatus.DRAFT && data.chapter.pages.length > 0;
+  const batchRemoveFormId = `chapter-page-remove:${id}`;
   const customOrderFormId = `chapter-page-order:${id}`;
 
   return (
@@ -249,6 +253,13 @@ export default async function DashboardChapterDetailPage({
 
         {data.chapter.pages.length ? (
           <div className="mt-6 space-y-6">
+            {data.chapter.status === ChapterStatus.DRAFT ? (
+              <ChapterPageBatchToolbar
+                formId={batchRemoveFormId}
+                removePagesFormAction={removePagesFormAction}
+              />
+            ) : null}
+
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {data.chapter.pages.map((page, index) => {
                 const moveUpAction = moveChapterPageRedirectAction.bind(null, id, page.id, "up");
@@ -260,9 +271,21 @@ export default async function DashboardChapterDetailPage({
                 return (
                   <article
                     key={page.id}
-                    className="space-y-4 rounded-[1.5rem] border border-border bg-background/70 p-4"
+                    className="space-y-4 rounded-[1.5rem] border border-border bg-background/70 p-4 transition has-[:checked]:border-foreground/30 has-[:checked]:bg-surface"
                   >
                     <input type="hidden" name="pageIds" value={page.id} form={customOrderFormId} />
+                    {isDraft ? (
+                      <label className="flex items-center gap-2 text-sm text-muted">
+                        <input
+                          type="checkbox"
+                          name="pageIds"
+                          value={page.id}
+                          form={batchRemoveFormId}
+                          className="h-4 w-4 rounded border-border text-foreground focus:ring-foreground/20"
+                        />
+                        Select
+                      </label>
+                    ) : null}
                     <div className="overflow-hidden rounded-[1.25rem] border border-border bg-surface">
                       {page.previewUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element

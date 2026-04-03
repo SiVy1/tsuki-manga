@@ -83,12 +83,14 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${newsreader.variable} ${raleway.variable} h-full antialiased`}
     >
-      <head>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {buildThemeInitScript(defaultThemeMode, persistAccountTheme)}
-        </Script>
-      </head>
       <body className="min-h-full flex flex-col">
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: buildThemeInitScript(defaultThemeMode, persistAccountTheme),
+          }}
+        />
         <ThemeController
           defaultThemeMode={defaultThemeMode}
           persistAccountTheme={persistAccountTheme}

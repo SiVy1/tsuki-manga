@@ -8,6 +8,7 @@ import {
   moveChapterPageAction,
   publishChapterAction,
   removeChapterPageAction,
+  removeChapterPagesAction,
   replaceChapterPageAction,
   restoreChapterAction,
   softDeleteChapterAction,
@@ -276,6 +277,76 @@ describe("series and chapter backend flow", () => {
 
     expect(previewData.chapter.pages).toHaveLength(2);
     expect(previewData.chapter.pages[0]?.imageUrl).toContain("/api/draft-assets/");
+  });
+
+  it("supports removing multiple draft pages in one action", async () => {
+    const seriesResult = await createSeriesAction({
+      title: "Batch Remove",
+    });
+
+    if (!seriesResult.success) {
+      throw new Error("series creation failed");
+    }
+
+    const chapterResult = await createChapterAction({
+      seriesId: seriesResult.data.id,
+      number: "5",
+      title: "Cleanup Pass",
+    });
+
+    if (!chapterResult.success) {
+      throw new Error("chapter creation failed");
+    }
+
+    const uploadFormData = new FormData();
+    uploadFormData.append("files", await createPngFile("001.png"));
+    uploadFormData.append("files", await createPngFile("002.png", { rgb: { r: 90, g: 60, b: 120 } }));
+    uploadFormData.append("files", await createPngFile("003.png", { rgb: { r: 50, g: 120, b: 70 } }));
+    uploadFormData.append("files", await createPngFile("004.png", { rgb: { r: 140, g: 50, b: 90 } }));
+
+    const uploadResult = await uploadChapterPagesAction(chapterResult.data.id, uploadFormData);
+
+    if (!uploadResult.success) {
+      throw new Error("upload failed");
+    }
+
+    const pagesBeforeRemove = await prisma.chapterPage.findMany({
+      where: {
+        chapterId: chapterResult.data.id,
+      },
+      include: {
+        asset: true,
+      },
+      orderBy: {
+        pageOrder: "asc",
+      },
+    });
+
+    const removeResult = await removeChapterPagesAction({
+      chapterId: chapterResult.data.id,
+      pageIds: [pagesBeforeRemove[1]!.id, pagesBeforeRemove[3]!.id],
+    });
+
+    expect(removeResult.success).toBe(true);
+
+    const pagesAfterRemove = await prisma.chapterPage.findMany({
+      where: {
+        chapterId: chapterResult.data.id,
+      },
+      include: {
+        asset: true,
+      },
+      orderBy: {
+        pageOrder: "asc",
+      },
+    });
+
+    expect(pagesAfterRemove).toHaveLength(2);
+    expect(pagesAfterRemove.map((page) => page.pageOrder)).toEqual([1, 2]);
+    expect(pagesAfterRemove.map((page) => page.asset.originalFilename)).toEqual([
+      "001.png",
+      "003.png",
+    ]);
   });
 
   it("soft deletes and restores content according to product rules", async () => {

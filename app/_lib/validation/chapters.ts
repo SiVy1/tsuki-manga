@@ -40,6 +40,11 @@ export const removeChapterPageInputSchema = z.object({
   pageId: uuidSchema,
 });
 
+export const removeChapterPagesInputSchema = z.object({
+  chapterId: uuidSchema,
+  pageIds: z.array(uuidSchema).min(1, "Select at least one page."),
+});
+
 export const replaceChapterPageInputSchema = z.object({
   chapterId: uuidSchema,
   pageId: uuidSchema,

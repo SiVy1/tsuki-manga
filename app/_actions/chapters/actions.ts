@@ -20,6 +20,7 @@ import {
   moveChapterPageInputSchema,
   publishChapterInputSchema,
   removeChapterPageInputSchema,
+  removeChapterPagesInputSchema,
   reorderChapterPagesInputSchema,
   replaceChapterPageInputSchema,
   restoreChapterInputSchema,
@@ -53,6 +54,8 @@ async function getEditableChapter(chapterId: string) {
   });
 }
 
+type EditableChapter = NonNullable<Awaited<ReturnType<typeof getEditableChapter>>>;
+
 async function saveChapterPageOrder(
   transaction: Prisma.TransactionClient,
   chapterId: string,
@@ -79,6 +82,47 @@ async function saveChapterPageOrder(
 
   await transaction.chapter.update({
     where: { id: chapterId },
+    data: {
+      updatedById,
+    },
+  });
+}
+
+async function removeChapterPagesFromDraft(
+  transaction: Prisma.TransactionClient,
+  chapter: EditableChapter,
+  pagesToRemove: EditableChapter["pages"],
+  updatedById: string,
+) {
+  const pageIdsToRemove = pagesToRemove.map((page) => page.id);
+  const assetIdsToRemove = pagesToRemove.map((page) => page.asset.id);
+  const remainingPageIds = chapter.pages
+    .filter((page) => !pageIdsToRemove.includes(page.id))
+    .map((page) => page.id);
+
+  await transaction.chapterPage.deleteMany({
+    where: {
+      id: {
+        in: pageIdsToRemove,
+      },
+    },
+  });
+
+  await transaction.asset.deleteMany({
+    where: {
+      id: {
+        in: assetIdsToRemove,
+      },
+    },
+  });
+
+  if (remainingPageIds.length) {
+    await saveChapterPageOrder(transaction, chapter.id, remainingPageIds, updatedById);
+    return;
+  }
+
+  await transaction.chapter.update({
+    where: { id: chapter.id },
     data: {
       updatedById,
     },
@@ -487,30 +531,9 @@ export async function removeChapterPageAction(rawInput: unknown) {
     return fail("Page not found.");
   }
 
-  const remainingPageIds = chapter.pages
-    .filter((item) => item.id !== page.id)
-    .map((item) => item.id);
-
-  await prisma.$transaction(async (transaction) => {
-    await transaction.chapterPage.delete({
-      where: { id: page.id },
-    });
-
-    await transaction.asset.delete({
-      where: { id: page.asset.id },
-    });
-
-    if (remainingPageIds.length) {
-      await saveChapterPageOrder(transaction, chapter.id, remainingPageIds, user.id);
-    } else {
-      await transaction.chapter.update({
-        where: { id: chapter.id },
-        data: {
-          updatedById: user.id,
-        },
-      });
-    }
-  });
+  await prisma.$transaction((transaction) =>
+    removeChapterPagesFromDraft(transaction, chapter, [page], user.id),
+  );
 
   await storageDriver.delete(page.asset.storageKey, page.asset.scope).catch(() => undefined);
 
@@ -533,6 +556,73 @@ export async function removeChapterPageRedirectAction(chapterId: string, pageId:
   redirect(
     `/dashboard/chapters/${chapterId}?notice=${encodeURIComponent("Page removed.")}`,
   );
+}
+
+export async function removeChapterPagesAction(rawInput: unknown) {
+  const user = await requirePermission(PermissionBits.CHAPTERS);
+  const parsed = removeChapterPagesInputSchema.safeParse(rawInput);
+
+  if (!parsed.success) {
+    return fail(parsed.error.issues[0]?.message ?? "Invalid page remove request.");
+  }
+
+  const chapter = await getEditableChapter(parsed.data.chapterId);
+
+  if (!chapter || chapter.deletedAt || chapter.series.deletedAt) {
+    return fail("Chapter not found.");
+  }
+
+  if (chapter.status !== ChapterStatus.DRAFT) {
+    return fail("Only draft chapters can remove pages.");
+  }
+
+  const requestedIds = [...new Set(parsed.data.pageIds)];
+  const pagesToRemove = chapter.pages.filter((page) => requestedIds.includes(page.id));
+
+  if (!pagesToRemove.length) {
+    return fail("Select at least one page.");
+  }
+
+  if (pagesToRemove.length !== requestedIds.length) {
+    return fail("Remove payload includes pages outside the target chapter.");
+  }
+
+  await prisma.$transaction((transaction) =>
+    removeChapterPagesFromDraft(transaction, chapter, pagesToRemove, user.id),
+  );
+
+  await Promise.allSettled(
+    pagesToRemove.map((page) => storageDriver.delete(page.asset.storageKey, page.asset.scope)),
+  );
+
+  return ok({
+    chapterId: chapter.id,
+    removedCount: pagesToRemove.length,
+  });
+}
+
+export async function removeChapterPagesRedirectAction(
+  chapterId: string,
+  formData: FormData,
+) {
+  const result = await removeChapterPagesAction({
+    chapterId,
+    pageIds: formData
+      .getAll("pageIds")
+      .map((value) => value.toString())
+      .filter(Boolean),
+  });
+
+  if (!result.success) {
+    redirect(`/dashboard/chapters/${chapterId}?error=${encodeURIComponent(result.error)}`);
+  }
+
+  const notice =
+    result.data.removedCount === 1
+      ? "Removed 1 page."
+      : `Removed ${result.data.removedCount} pages.`;
+
+  redirect(`/dashboard/chapters/${chapterId}?notice=${encodeURIComponent(notice)}`);
 }
 
 export async function replaceChapterPageAction(chapterId: string, pageId: string, formData: FormData) {
