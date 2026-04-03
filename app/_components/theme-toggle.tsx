@@ -98,7 +98,7 @@ export function ThemeToggle({
     <div
       role="group"
       aria-label="Theme mode"
-      className="flex items-center gap-1 rounded-full border border-border/80 bg-background/90 p-1 shadow-[var(--shadow-soft)] backdrop-blur-sm"
+      className="flex items-center gap-0.5"
     >
       {themeModes.map((mode) => {
         const details = themeModeDetails[mode];
@@ -120,9 +120,9 @@ export function ThemeToggle({
             }}
             title={details.description}
             aria-label={details.label}
-            className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+            className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
               themeState.mode === mode
-                ? "bg-foreground text-background shadow-[var(--shadow-soft)]"
+                ? "bg-[var(--surface-hover)] text-foreground"
                 : "text-muted hover:bg-[var(--surface-hover)] hover:text-foreground"
             }`}
             aria-pressed={themeState.mode === mode}

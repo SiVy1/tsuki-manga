@@ -48,53 +48,55 @@ export default async function SiteLayout({
 
   return (
     <>
-      <header className="border-b border-border/80 bg-background/90">
-        <div className="shell flex flex-wrap items-center justify-between gap-4 py-5">
-          <Link href="/" className="flex items-center gap-3">
+      <header className="border-b border-border/70 bg-background/95">
+        <div className="shell flex flex-wrap items-end justify-between gap-x-8 gap-y-3 py-4 md:items-center md:py-5">
+          <Link href="/" className="flex min-w-0 items-center gap-3">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logoUrl}
                 alt={instanceSettings.groupName}
-                className="h-10 w-10 rounded-xl border border-border bg-surface object-cover"
+                className="h-9 w-9 rounded-lg border border-border/70 bg-surface/70 object-cover"
               />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface font-serif text-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-surface/70 font-serif text-xs">
                 {groupMark}
               </div>
             )}
-            <div className="space-y-1">
-              <p className="text-[0.68rem] uppercase tracking-[0.24em] text-muted">
+            <div className="min-w-0 space-y-1">
+              <p className="text-[0.64rem] uppercase tracking-[0.22em] text-muted">
                 Scanlation group
               </p>
-              <p className="font-serif text-2xl">{instanceSettings.groupName}</p>
+              <p className="truncate font-serif text-[1.7rem] leading-none md:text-[1.85rem]">
+                {instanceSettings.groupName}
+              </p>
             </div>
           </Link>
 
-          <nav className="flex flex-wrap items-center gap-3 text-sm">
-            <ThemeToggle
-              defaultThemeMode={defaultThemeMode}
-              onPersistThemeMode={session?.user ? saveThemePreferenceAction : undefined}
-            />
+          <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm text-muted">
             <Link
               href="/series"
-              className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/20 hover:text-foreground"
+              className="transition hover:text-foreground"
             >
               Series
             </Link>
             {dashboardVisible ? (
               <Link
                 href="/dashboard"
-                className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/20 hover:text-foreground"
+                className="transition hover:text-foreground"
               >
                 Dashboard
               </Link>
             ) : null}
+            <ThemeToggle
+              defaultThemeMode={defaultThemeMode}
+              onPersistThemeMode={session?.user ? saveThemePreferenceAction : undefined}
+            />
             {session?.user ? (
               <form action={signOutAction}>
                 <SubmitButton
                   pendingLabel="Signing out..."
-                  className="inline-flex items-center justify-center rounded-full border border-foreground px-4 py-2 text-sm text-foreground transition hover:bg-foreground hover:text-background disabled:cursor-wait disabled:opacity-70"
+                  className="inline-flex items-center justify-center text-sm text-foreground transition hover:opacity-70 disabled:cursor-wait disabled:opacity-70"
                 >
                   Sign out
                 </SubmitButton>
@@ -102,7 +104,7 @@ export default async function SiteLayout({
             ) : (
               <Link
                 href="/sign-in"
-                className="rounded-full bg-foreground px-4 py-2 text-background transition hover:opacity-90"
+                className="text-foreground transition hover:opacity-70"
               >
                 Sign in
               </Link>
