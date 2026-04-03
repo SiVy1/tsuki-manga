@@ -37,7 +37,8 @@ export default async function HomePage() {
           </h1>
           <p className="mx-auto max-w-2xl text-sm leading-8 text-muted md:text-base">
             {data.instanceSettings.groupDescription ??
-              data.instanceSettings.siteDescription}
+              data.instanceSettings.siteDescription ??
+              "Reader-first releases from one scanlation group."}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
             <Link

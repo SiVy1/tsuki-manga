@@ -9,6 +9,15 @@ import { getInstanceSettings } from "@/app/_lib/settings/instance";
 import { storageDriver } from "@/app/_lib/storage";
 import { SubmitButton } from "@/app/_components/submit-button";
 
+function getGroupMark(groupName: string) {
+  return groupName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export default async function SiteLayout({
   children,
 }: Readonly<{
@@ -25,6 +34,9 @@ export default async function SiteLayout({
   const logoUrl = instanceSettings.logoAsset?.storageKey
     ? storageDriver.getPublicUrl(instanceSettings.logoAsset.storageKey)
     : null;
+  const groupMark = getGroupMark(instanceSettings.groupName) || "TM";
+  const footerDescription =
+    instanceSettings.groupDescription ?? instanceSettings.siteDescription;
 
   async function signOutAction() {
     "use server";
@@ -48,7 +60,7 @@ export default async function SiteLayout({
               />
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface font-serif text-sm">
-                TM
+                {groupMark}
               </div>
             )}
             <div className="space-y-1">
@@ -100,6 +112,52 @@ export default async function SiteLayout({
       </header>
 
       {children}
+
+      <footer className="border-t border-border/70">
+        <div className="shell flex flex-col gap-8 py-10 md:flex-row md:items-end md:justify-between md:py-12">
+          <div className="max-w-xl space-y-3">
+            <p className="text-[0.68rem] uppercase tracking-[0.24em] text-muted">
+              Published by
+            </p>
+            <div className="space-y-2">
+              <p className="font-serif text-3xl">{instanceSettings.groupName}</p>
+              <p className="max-w-lg text-sm leading-7 text-muted">{footerDescription}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4 md:text-right">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted md:justify-end">
+              <Link href="/series" className="transition hover:text-foreground">
+                Series
+              </Link>
+              <Link href="/feed.xml" className="transition hover:text-foreground">
+                RSS feed
+              </Link>
+              {!session?.user ? (
+                <Link href="/sign-in" className="transition hover:text-foreground">
+                  Sign in
+                </Link>
+              ) : null}
+            </div>
+
+            {instanceSettings.socialLinks.length ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted md:justify-end">
+                {instanceSettings.socialLinks.map((link) => (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="transition hover:text-foreground"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </footer>
     </>
   );
 }
