@@ -1,0 +1,97 @@
+# Tsuki Manga
+
+Self-hosted manga reading and publishing platform for scanlation groups.
+
+<p align="center">
+  <img src="./img/Home.png" alt="Tsuki Manga homepage" width="100%" />
+</p>
+
+## What It Is
+
+Tsuki Manga is built for one group running one instance.
+
+It combines a calm public reading experience with a focused internal editorial workflow:
+
+- a public site for discovery and reading
+- a restrained reader built around manga pages, not chrome
+- a dashboard for drafting, uploading, previewing, and publishing chapters
+- a self-host-friendly stack with local and `S3-compatible` storage support
+
+The product aims to stay modern, clean, and practical without turning into a generic SaaS admin or an overbuilt publishing system.
+
+## Highlights
+
+- Public manga reader with `Webtoon`, `Left to right`, and `Right to left` reading modes
+- Editorial dashboard with a simple `draft -> published` workflow
+- Draft preview flow for checking chapters before release
+- Local and `S3-compatible` storage behind one storage abstraction
+- Docker-first deployment model for self-hosted instances
+- Calm editorial UI across the public site, reader, and dashboard
+
+## Product Views
+
+### Public series pages
+
+Series pages stay readable and content-first, with chapter lists as the main action surface.
+
+![Tsuki Manga series page](./img/Series.png)
+
+### Editorial dashboard
+
+The dashboard focuses on real publishing work: series, chapter drafts, page uploads, preview, and release.
+
+![Tsuki Manga dashboard](./img/Dashboard.jpeg)
+
+## Built For
+
+- Scanlation groups that want one clean, self-hosted home for their releases
+- Teams that prefer a simple editorial flow over platform complexity
+- Self-hosters who want a modern product without a large operational footprint
+
+## Quick Start
+
+### Local development
+
+```bash
+pnpm install
+pnpm dev
+```
+
+### Production-style local stack
+
+```bash
+docker compose up --build
+```
+
+### Useful commands
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:integration
+pnpm build
+```
+
+## Documentation
+
+- [Design canon](./docs/design.md)
+- [Roadmap review](./docs/status/2026-04-03-roadmap-review.md)
+- [Editorial workflow](./docs/features/editorial-workflow.md)
+- [Reader experience](./docs/features/reader-experience.md)
+- [Deployment runbook](./docs/runbooks/deployment.md)
+- [Post-deploy sanity check](./docs/runbooks/post-deploy-sanity-check.md)
+- [ADR index](./docs/adr/README.md)
+
+## Status
+
+Tsuki Manga is an actively developed, v1-focused product.
+
+The current codebase already includes:
+
+- public discovery pages
+- a polished reader
+- an editorial dashboard
+- operational runbooks for self-hosting
+
+The project is being shaped around a clear constraint set: single-group deployment, simple publishing workflow, restrained UI, and low-friction self-hosting.
