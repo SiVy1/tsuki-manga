@@ -2,6 +2,18 @@ import type { NextConfig } from "next";
 
 const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [];
 
+remotePatterns.push({
+  protocol: "https",
+  hostname: "**.supabase.co",
+  pathname: "/storage/v1/object/public/**",
+});
+
+remotePatterns.push({
+  protocol: "https",
+  hostname: "**.storage.supabase.co",
+  pathname: "/storage/v1/s3/**",
+});
+
 if (process.env.S3_PUBLIC_BASE_URL) {
   try {
     const s3PublicUrl = new URL(process.env.S3_PUBLIC_BASE_URL);
