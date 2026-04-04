@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { buildSecurityHeaders } from "./app/_lib/security/headers";
+
 const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [];
 
 if (process.env.S3_PUBLIC_BASE_URL) {
@@ -27,6 +29,14 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns,
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: buildSecurityHeaders(process.env.S3_PUBLIC_BASE_URL),
+      },
+    ];
   },
 };
 
