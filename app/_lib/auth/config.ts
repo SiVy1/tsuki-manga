@@ -20,7 +20,7 @@ async function maybeBootstrapDiscordAdmin(userId: string, provider: string, prov
     return;
   }
 
-  await prisma.user.update({
+  await prisma.user.updateMany({
     where: { id: userId },
     data: {
       rolePreset: RolePreset.ADMIN,
