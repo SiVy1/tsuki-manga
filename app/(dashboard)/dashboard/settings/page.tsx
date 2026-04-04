@@ -277,6 +277,25 @@ export default async function DashboardSettingsPage({ searchParams }: PageProps)
               />
             </div>
 
+            {user.rolePreset === RolePreset.ADMIN ? (
+              <div className="border-t border-border pt-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Content export</p>
+                    <p className="text-sm text-muted">
+                      Download a JSON export of instance content and logical asset references.
+                    </p>
+                  </div>
+                  <a
+                    href="/api/export/content"
+                    className="text-sm text-muted underline underline-offset-4 transition hover:text-foreground"
+                  >
+                    Download content export
+                  </a>
+                </div>
+              </div>
+            ) : null}
+
             <SubmitButton pendingLabel="Saving...">Save settings</SubmitButton>
           </form>
         </article>
