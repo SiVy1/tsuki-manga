@@ -5,6 +5,7 @@ import Discord from "next-auth/providers/discord";
 
 import { prisma } from "@/app/_lib/db/client";
 import { createTestAuthProvider } from "@/app/_lib/auth/test-provider";
+import { isTestAuthEnabled } from "@/app/_lib/auth/test-auth";
 import { getPermissionBitsForPreset } from "@/app/_lib/permissions/bits";
 import { getEnv } from "@/app/_lib/settings/env";
 
@@ -41,7 +42,7 @@ function buildProviders() {
     );
   }
 
-  if (env.ENABLE_TEST_AUTH) {
+  if (isTestAuthEnabled(env)) {
     providers.push(createTestAuthProvider(env.TEST_AUTH_SHARED_SECRET || undefined));
   }
 
@@ -49,7 +50,7 @@ function buildProviders() {
 }
 
 export const authConfig: NextAuthConfig = {
-  trustHost: true,
+  trustHost: getEnv().NODE_ENV !== "production",
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",

@@ -13,6 +13,11 @@ export const envSchema = z.object({
     .optional()
     .transform((value) => value === "true" || value === "1" || value === "TRUE")
     .default(false),
+  ALLOW_TEST_AUTH_IN_PRODUCTION: z
+    .enum(["true", "false", "1", "0", "TRUE", "FALSE"])
+    .optional()
+    .transform((value) => value === "true" || value === "1" || value === "TRUE")
+    .default(false),
   USE_TEST_DATABASE: z
     .enum(["true", "false", "1", "0", "TRUE", "FALSE"])
     .optional()

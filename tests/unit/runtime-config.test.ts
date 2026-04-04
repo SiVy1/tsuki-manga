@@ -43,6 +43,66 @@ describe("runtime config validation", () => {
     );
   });
 
+  it("requires APP_URL in production", () => {
+    const result = validateRuntimeConfig(
+      createEnv({
+        APP_URL: "",
+      }),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "APP_URL",
+          code: "missing_app_url",
+          level: "error",
+        }),
+      ]),
+    );
+  });
+
+  it("blocks test auth in production without an explicit override", () => {
+    const result = validateRuntimeConfig(
+      createEnv({
+        ENABLE_TEST_AUTH: "true",
+        TEST_AUTH_SHARED_SECRET: "secret",
+      }),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "ENABLE_TEST_AUTH",
+          code: "test_auth_blocked_in_production",
+          level: "error",
+        }),
+      ]),
+    );
+  });
+
+  it("allows test auth in production only with an explicit override", () => {
+    const result = validateRuntimeConfig(
+      createEnv({
+        ENABLE_TEST_AUTH: "true",
+        TEST_AUTH_SHARED_SECRET: "secret",
+        ALLOW_TEST_AUTH_IN_PRODUCTION: "true",
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "ALLOW_TEST_AUTH_IN_PRODUCTION",
+          code: "test_auth_override_enabled_in_production",
+          level: "warning",
+        }),
+      ]),
+    );
+  });
+
   it("requires the full s3 config when s3 storage is enabled", () => {
     const result = validateRuntimeConfig(
       createEnv({

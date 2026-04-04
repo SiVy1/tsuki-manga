@@ -13,6 +13,10 @@ export async function getAppBaseUrl() {
     return trimTrailingSlash(env.APP_URL);
   }
 
+  if (env.NODE_ENV === "production") {
+    throw new Error("APP_URL must be configured in production.");
+  }
+
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";

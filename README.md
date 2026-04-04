@@ -34,7 +34,13 @@ The product aims to stay modern, clean, and practical without turning into a gen
 
 Series pages stay readable and content-first, with chapter lists as the main action surface.
 
-![Tsuki Manga series page](./img/Series.png)
+![Tsuki Manga series page](./img/series.jpeg)
+
+### Reader
+
+The reader stays visually restrained and page-first, with support for `Webtoon`, `Left to right`, and `Right to left` reading modes.
+
+![Tsuki Manga reader](./img/reader.png)
 
 ### Editorial dashboard
 

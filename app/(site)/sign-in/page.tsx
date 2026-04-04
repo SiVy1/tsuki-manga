@@ -3,6 +3,7 @@ import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 
 import { signIn, signOut } from "@/app/_lib/auth";
+import { isTestAuthEnabled } from "@/app/_lib/auth/test-auth";
 import { getOptionalSession } from "@/app/_lib/auth/session";
 import { canAccessDashboard } from "@/app/_lib/permissions/bits";
 import { getEnv } from "@/app/_lib/settings/env";
@@ -39,7 +40,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
   const [session, params] = await Promise.all([getOptionalSession(), searchParams]);
   const redirectTo = resolveRedirectTarget(params.redirectTo);
   const env = getEnv();
-  const allowTestAuthAccountSwitch = env.ENABLE_TEST_AUTH;
+  const allowTestAuthAccountSwitch = isTestAuthEnabled(env);
 
   if (session?.user && !allowTestAuthAccountSwitch) {
     redirect(canAccessDashboard(session.user.permissionBits) ? redirectTo : "/");
@@ -170,7 +171,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
             </div>
           )}
 
-          {env.ENABLE_TEST_AUTH ? (
+          {allowTestAuthAccountSwitch ? (
             <form action={signInWithTestAuth} className="space-y-4 border-t border-border pt-5">
               <input type="hidden" name="redirectTo" value={redirectTo} />
               <div className="space-y-1">

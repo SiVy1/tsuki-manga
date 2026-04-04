@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 
+import { isTestAuthEnabled } from "@/app/_lib/auth/test-auth";
 import { envSchema, type AppEnv } from "@/app/_lib/settings/env";
 
 export type RuntimeConfigIssue = {
@@ -69,9 +70,11 @@ export function validateRuntimeConfig(
     issues.push({
       code: "missing_app_url",
       field: "APP_URL",
-      level: env.NODE_ENV === "production" ? "warning" : "warning",
+      level: env.NODE_ENV === "production" ? "error" : "warning",
       message:
-        "APP_URL is not explicitly set; public URLs will fall back to the incoming request host.",
+        env.NODE_ENV === "production"
+          ? "APP_URL must be set in production."
+          : "APP_URL is not explicitly set; public URLs will fall back to the incoming request host.",
     });
   }
 
@@ -97,13 +100,23 @@ export function validateRuntimeConfig(
     });
   }
 
-  if (env.NODE_ENV === "production" && env.ENABLE_TEST_AUTH) {
+  if (env.NODE_ENV === "production" && env.ENABLE_TEST_AUTH && !env.ALLOW_TEST_AUTH_IN_PRODUCTION) {
     issues.push({
-      code: "test_auth_enabled_in_production",
+      code: "test_auth_blocked_in_production",
       field: "ENABLE_TEST_AUTH",
+      level: "error",
+      message:
+        "ENABLE_TEST_AUTH cannot be enabled in production unless ALLOW_TEST_AUTH_IN_PRODUCTION is also set.",
+    });
+  }
+
+  if (env.NODE_ENV === "production" && isTestAuthEnabled(env)) {
+    issues.push({
+      code: "test_auth_override_enabled_in_production",
+      field: "ALLOW_TEST_AUTH_IN_PRODUCTION",
       level: "warning",
       message:
-        "ENABLE_TEST_AUTH is enabled in production. Disable it unless this is an intentional private deployment workflow.",
+        "Test auth is explicitly enabled in production. Use this only for intentional private deployment workflows.",
     });
   }
 
