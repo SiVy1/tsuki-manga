@@ -101,3 +101,9 @@ The current codebase already includes:
 - operational runbooks for self-hosting
 
 The project is being shaped around a clear constraint set: single-group deployment, simple publishing workflow, restrained UI, and low-friction self-hosting.
+
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0.
+
+See [LICENSE](./LICENSE) for details.

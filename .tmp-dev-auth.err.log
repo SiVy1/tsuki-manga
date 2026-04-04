@@ -1,8 +1,0 @@
-⨯ Another next dev server is already running.
-
-- Local:        http://localhost:3000
-- PID:          2148
-- Dir:          C:\Users\Seweryn\Documents\Projekty\tsuki-manga
-- Log:          .next\dev\logs\next-development.log
-
-Run taskkill /PID 2148 /F to stop it.
