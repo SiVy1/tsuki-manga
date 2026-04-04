@@ -1,3 +1,4 @@
+![odwiedzajacy](https://visitor-badge.laobi.icu/badge?page_id=SiVy1.Tsuki-manga)
 # Tsuki Manga
 
 Self-hosted manga reading and publishing platform for scanlation groups.
