@@ -50,7 +50,7 @@ function buildProviders() {
 }
 
 export const authConfig: NextAuthConfig = {
-  trustHost: getEnv().NODE_ENV !== "production",
+  trustHost: getEnv().NODE_ENV !== "production" || getEnv().AUTH_TRUST_HOST || process.env.VERCEL === "1",
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",

@@ -5,6 +5,11 @@ export const envSchema = z.object({
   APP_URL: z.string().url().optional().or(z.literal("")),
   APP_TIMEZONE: z.string().min(1).default("UTC"),
   AUTH_SECRET: z.string().min(1).default("development-auth-secret"),
+  AUTH_TRUST_HOST: z
+    .enum(["true", "false", "1", "0", "TRUE", "FALSE"])
+    .optional()
+    .transform((value) => value === "true" || value === "1" || value === "TRUE")
+    .default(false),
   DISCORD_CLIENT_ID: z.string().optional().or(z.literal("")),
   DISCORD_CLIENT_SECRET: z.string().optional().or(z.literal("")),
   DISCORD_BOOTSTRAP_ADMIN_ID: z.string().optional().or(z.literal("")),
