@@ -14,7 +14,7 @@ import {
   updateChapterRedirectAction,
   uploadChapterPagesRedirectAction,
 } from "@/app/_actions/chapters/actions";
-import { requireDashboardUser, requirePermission } from "@/app/_lib/auth/session";
+import { requirePermission } from "@/app/_lib/auth/session";
 import { getDashboardChapterDetailData } from "@/app/_lib/dashboard/queries";
 import { PermissionBits } from "@/app/_lib/permissions/bits";
 import { formatDateTime } from "@/app/_lib/utils/formatting";
@@ -36,11 +36,10 @@ export default async function DashboardChapterDetailPage({
   params,
   searchParams,
 }: PageProps) {
-  await requirePermission(PermissionBits.CHAPTERS);
-  const [{ id }, paramsState, user, data] = await Promise.all([
+  const user = await requirePermission(PermissionBits.CHAPTERS);
+  const [{ id }, paramsState, data] = await Promise.all([
     params,
     searchParams,
-    requireDashboardUser(),
     params.then(({ id: chapterId }) => getDashboardChapterDetailData(chapterId)),
   ]);
   const updateChapterFormAction = updateChapterRedirectAction.bind(

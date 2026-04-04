@@ -10,7 +10,7 @@ import {
   updateSeriesAction,
   uploadSeriesCoverAction,
 } from "@/app/_actions/series/actions";
-import { requireDashboardUser, requirePermission } from "@/app/_lib/auth/session";
+import { requirePermission } from "@/app/_lib/auth/session";
 import { getDashboardSeriesDetailData } from "@/app/_lib/dashboard/queries";
 import { PermissionBits } from "@/app/_lib/permissions/bits";
 import { formatDateTime, humanizeEnumValue } from "@/app/_lib/utils/formatting";
@@ -30,11 +30,10 @@ export default async function DashboardSeriesDetailPage({
   params,
   searchParams,
 }: PageProps) {
-  await requirePermission(PermissionBits.SERIES);
-  const [{ id }, paramsState, user, data] = await Promise.all([
+  const user = await requirePermission(PermissionBits.SERIES);
+  const [{ id }, paramsState, data] = await Promise.all([
     params,
     searchParams,
-    requireDashboardUser(),
     params.then(({ id: seriesId }) => getDashboardSeriesDetailData(seriesId)),
   ]);
 

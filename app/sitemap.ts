@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 import { ChapterStatus, SeriesVisibility } from "@/generated/prisma/client";
 
 import { prisma } from "@/app/_lib/db/client";
-import { isMissingDatabaseStructureError } from "@/app/_lib/db/errors";
+import { isMissingOrUnavailableDatabaseError } from "@/app/_lib/db/errors";
 import { buildAbsoluteUrl } from "@/app/_lib/seo/public-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -62,7 +62,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })),
     ];
   } catch (error) {
-    if (isMissingDatabaseStructureError(error)) {
+    if (isMissingOrUnavailableDatabaseError(error)) {
       return [
         {
           url: homeUrl,

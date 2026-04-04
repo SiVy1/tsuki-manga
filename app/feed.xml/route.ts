@@ -1,7 +1,7 @@
 import { ChapterStatus, SeriesVisibility } from "@/generated/prisma/client";
 
 import { prisma } from "@/app/_lib/db/client";
-import { isMissingDatabaseStructureError } from "@/app/_lib/db/errors";
+import { isMissingOrUnavailableDatabaseError } from "@/app/_lib/db/errors";
 import { buildAbsoluteUrl } from "@/app/_lib/seo/public-url";
 import { getInstanceSettings } from "@/app/_lib/settings/instance";
 
@@ -97,7 +97,7 @@ export async function GET() {
       take: 20,
     });
   } catch (error) {
-    if (!isMissingDatabaseStructureError(error)) {
+    if (!isMissingOrUnavailableDatabaseError(error)) {
       throw error;
     }
   }

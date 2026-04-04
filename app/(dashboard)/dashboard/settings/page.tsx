@@ -11,7 +11,7 @@ import {
   upsertSocialLinkAction,
   upsertTaxonomyTermAction,
 } from "@/app/_actions/settings/actions";
-import { requireDashboardUser, requirePermission } from "@/app/_lib/auth/session";
+import { requirePermission } from "@/app/_lib/auth/session";
 import { getDashboardSettingsData } from "@/app/_lib/dashboard/queries";
 import { PermissionBits } from "@/app/_lib/permissions/bits";
 import { storageDriver } from "@/app/_lib/storage";
@@ -32,10 +32,9 @@ function parseKeywordList(rawKeywords: string) {
 }
 
 export default async function DashboardSettingsPage({ searchParams }: PageProps) {
-  await requirePermission(PermissionBits.SETTINGS);
-  const [params, user, data] = await Promise.all([
+  const user = await requirePermission(PermissionBits.SETTINGS);
+  const [params, data] = await Promise.all([
     searchParams,
-    requireDashboardUser(),
     getDashboardSettingsData(),
   ]);
 

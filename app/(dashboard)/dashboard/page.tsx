@@ -7,10 +7,8 @@ import { getDashboardOverviewData } from "@/app/_lib/dashboard/queries";
 import { formatDateTime, humanizeEnumValue } from "@/app/_lib/utils/formatting";
 
 export default async function DashboardPage() {
-  const [user, data] = await Promise.all([
-    requireDashboardUser(),
-    getDashboardOverviewData(),
-  ]);
+  const user = await requireDashboardUser();
+  const data = await getDashboardOverviewData();
 
   const primaryAction = (() => {
     if (data.latestDraft) {
