@@ -232,6 +232,13 @@ export default async function ChapterPage({ params }: PageProps) {
 
       <ChapterReader
         chapterId={result.chapter.id}
+        chapterSlug={result.chapter.slug}
+        chapterNumber={result.chapter.number}
+        chapterLabel={result.chapter.label}
+        chapterTitle={result.chapter.title}
+        seriesTitle={result.chapter.series.title}
+        seriesSlug={result.chapter.series.slug}
+        coverUrl={result.chapter.series.coverUrl}
         defaultMode={defaultMode}
         enableProgressTracking
         persistToAccount={Boolean(session?.user?.id)}

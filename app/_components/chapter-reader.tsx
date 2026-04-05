@@ -12,6 +12,7 @@ import {
   createStoredReadingProgress,
   getPageList,
   getReadingProgressStorageKey,
+  notifyReadingProgressStoreChanged,
   readingModes,
   readingModeStorageKey,
   readerModeValues,
@@ -22,6 +23,13 @@ import {
 
 type ChapterReaderProps = {
   chapterId?: string;
+  chapterSlug?: string;
+  chapterNumber?: string;
+  chapterLabel?: string | null;
+  chapterTitle?: string | null;
+  seriesTitle?: string;
+  seriesSlug?: string;
+  coverUrl?: string | null;
   defaultMode: ReaderMode;
   enableProgressTracking?: boolean;
   persistToAccount: boolean;
@@ -115,6 +123,13 @@ function setStoredRtlFitMode(fitMode: RtlFitMode) {
 
 export function ChapterReader({
   chapterId,
+  chapterSlug,
+  chapterNumber,
+  chapterLabel,
+  chapterTitle,
+  seriesTitle,
+  seriesSlug,
+  coverUrl,
   defaultMode,
   enableProgressTracking = false,
   persistToAccount,
@@ -215,18 +230,34 @@ export function ChapterReader({
     window.localStorage.setItem(
       storageKey,
       JSON.stringify(
-        createStoredReadingProgress(chapterId, currentRtlPage, completed),
+        createStoredReadingProgress(chapterId, currentRtlPage, completed, {
+          chapterSlug: chapterSlug ?? "",
+          chapterNumber: chapterNumber ?? "",
+          chapterLabel,
+          chapterTitle,
+          seriesTitle: seriesTitle ?? "",
+          seriesSlug: seriesSlug ?? "",
+          coverUrl,
+        }),
       ),
     );
     latestSavedPageId.current = currentRtlPage.id;
     notifyReadingProgressListeners();
+    notifyReadingProgressStoreChanged();
   }, [
+    chapterLabel,
+    chapterNumber,
+    chapterSlug,
+    chapterTitle,
     chapterId,
+    coverUrl,
     currentRtlIndex,
     currentRtlPage,
     enableProgressTracking,
     isRightToLeft,
     resumeProgress,
+    seriesSlug,
+    seriesTitle,
   ]);
 
   useEffect(() => {
@@ -282,12 +313,21 @@ export function ChapterReader({
         window.localStorage.setItem(
           storageKey,
           JSON.stringify(
-            createStoredReadingProgress(chapterId, currentPage, completed),
+            createStoredReadingProgress(chapterId, currentPage, completed, {
+              chapterSlug: chapterSlug ?? "",
+              chapterNumber: chapterNumber ?? "",
+              chapterLabel,
+              chapterTitle,
+              seriesTitle: seriesTitle ?? "",
+              seriesSlug: seriesSlug ?? "",
+              coverUrl,
+            }),
           ),
         );
         latestSavedPageId.current = currentPage.id;
         setDismissedResumeKey(resumeScopeKey);
         notifyReadingProgressListeners();
+        notifyReadingProgressStoreChanged();
       },
       {
         threshold: [0.6, 0.85],
@@ -301,9 +341,16 @@ export function ChapterReader({
     };
   }, [
     chapterId,
+    chapterLabel,
+    chapterNumber,
+    chapterSlug,
+    chapterTitle,
+    coverUrl,
     enableProgressTracking,
     isRightToLeft,
     resumeScopeKey,
+    seriesSlug,
+    seriesTitle,
     visiblePages,
   ]);
 
@@ -358,6 +405,7 @@ export function ChapterReader({
     }
     setDismissedResumeKey(resumeScopeKey);
     notifyReadingProgressListeners();
+    notifyReadingProgressStoreChanged();
   }
 
   function scrollToRtlPage(pageId: string) {

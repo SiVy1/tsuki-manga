@@ -80,6 +80,11 @@ export default async function SiteLayout({
             >
               Series
             </Link>
+            {session?.user ? (
+              <Link href="/library" className="transition hover:text-foreground">
+                Library
+              </Link>
+            ) : null}
             {dashboardVisible ? (
               <Link
                 href="/dashboard"

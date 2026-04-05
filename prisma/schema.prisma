@@ -79,6 +79,7 @@ model User {
   createdChapters       Chapter[]      @relation("ChapterCreatedBy")
   updatedChapters       Chapter[]      @relation("ChapterUpdatedBy")
   createdAssets         Asset[]        @relation("AssetCreatedBy")
+  savedSeries           SavedSeries[]
 }
 
 model Account {
@@ -178,9 +179,22 @@ model Series {
   chapters         Chapter[]
   slugHistory      SeriesSlugHistory[]
   taxonomyTerms    TaxonomyTerm[]
+  savedByUsers     SavedSeries[]
 
   @@index([deletedAt])
   @@index([visibility, deletedAt])
+}
+
+model SavedSeries {
+  userId    String   @db.Uuid
+  seriesId  String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@id([userId, seriesId])
+  @@index([seriesId])
 }
 
 model SeriesSlugHistory {

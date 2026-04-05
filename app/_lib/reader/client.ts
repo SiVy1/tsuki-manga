@@ -14,12 +14,41 @@ export type StoredReadingProgress = {
   pageOrder: number;
   completed: boolean;
   updatedAt: number;
+  chapterSlug?: string;
+  chapterNumber?: string;
+  chapterLabel?: string | null;
+  chapterTitle?: string | null;
+  seriesTitle?: string;
+  seriesSlug?: string;
+  coverUrl?: string | null;
 };
 
 export type ResolvedResumeProgress = {
   pageId: string;
   pageOrder: number;
   visiblePageNumber: number;
+};
+
+export type ReadingProgressContext = {
+  chapterSlug: string;
+  chapterNumber: string;
+  chapterLabel?: string | null;
+  chapterTitle?: string | null;
+  seriesTitle: string;
+  seriesSlug: string;
+  coverUrl?: string | null;
+};
+
+export type HomeContinueReadingSnapshot = {
+  chapterId: string;
+  chapterSlug: string;
+  chapterNumber: string;
+  chapterLabel: string | null;
+  chapterTitle: string | null;
+  seriesTitle: string;
+  seriesSlug: string;
+  coverUrl: string | null;
+  updatedAt: number;
 };
 
 export const readingModes = [
@@ -36,6 +65,10 @@ export const readerModeValues = [
 
 export const readingModeStorageKey = "tsuki-reader-mode";
 export const readingProgressStoragePrefix = "tsuki-reader-progress:";
+export const readingProgressChangedEvent = "tsuki-reader-progress-changed";
+
+let cachedLatestReadingProgressFingerprint: string | null = null;
+let cachedLatestReadingProgressSnapshot: HomeContinueReadingSnapshot | null = null;
 
 export function getPageList(mode: ReaderMode, pages: ReaderPage[]) {
   if (mode === "RIGHT_TO_LEFT") {
@@ -53,6 +86,7 @@ export function createStoredReadingProgress(
   chapterId: string,
   page: Pick<ReaderPage, "id" | "pageOrder">,
   completed: boolean,
+  context?: ReadingProgressContext,
 ): StoredReadingProgress {
   return {
     chapterId,
@@ -60,6 +94,13 @@ export function createStoredReadingProgress(
     pageOrder: page.pageOrder,
     completed,
     updatedAt: Date.now(),
+    chapterSlug: context?.chapterSlug,
+    chapterNumber: context?.chapterNumber,
+    chapterLabel: context?.chapterLabel ?? null,
+    chapterTitle: context?.chapterTitle ?? null,
+    seriesTitle: context?.seriesTitle,
+    seriesSlug: context?.seriesSlug,
+    coverUrl: context?.coverUrl ?? null,
   };
 }
 
@@ -87,6 +128,100 @@ export function parseStoredReadingProgress(rawValue: string | null) {
   } catch {
     return null;
   }
+}
+
+export function subscribeToReadingProgressStore(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  const handleStorage = (event?: StorageEvent) => {
+    if (
+      !event ||
+      event.key === null ||
+      event.key.startsWith(readingProgressStoragePrefix)
+    ) {
+      onStoreChange();
+    }
+  };
+
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(readingProgressChangedEvent, handleStorage as EventListener);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(readingProgressChangedEvent, handleStorage as EventListener);
+  };
+}
+
+export function notifyReadingProgressStoreChanged() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(readingProgressChangedEvent));
+}
+
+export function resolveLatestReadingProgressSnapshot(): HomeContinueReadingSnapshot | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const relevantEntries: string[] = [];
+  let latestMatch: HomeContinueReadingSnapshot | null = null;
+
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+
+    if (!key || !key.startsWith(readingProgressStoragePrefix)) {
+      continue;
+    }
+
+    const rawValue = window.localStorage.getItem(key);
+
+    relevantEntries.push(`${key}:${rawValue ?? ""}`);
+
+    const parsed = parseStoredReadingProgress(rawValue);
+
+    if (
+      !parsed ||
+      parsed.completed ||
+      !parsed.chapterSlug ||
+      !parsed.chapterNumber ||
+      !parsed.seriesTitle ||
+      !parsed.seriesSlug
+    ) {
+      continue;
+    }
+
+    const snapshot: HomeContinueReadingSnapshot = {
+      chapterId: parsed.chapterId,
+      chapterSlug: parsed.chapterSlug,
+      chapterNumber: parsed.chapterNumber,
+      chapterLabel: parsed.chapterLabel ?? null,
+      chapterTitle: parsed.chapterTitle ?? null,
+      seriesTitle: parsed.seriesTitle,
+      seriesSlug: parsed.seriesSlug,
+      coverUrl: parsed.coverUrl ?? null,
+      updatedAt: parsed.updatedAt,
+    };
+
+    if (!latestMatch || snapshot.updatedAt > latestMatch.updatedAt) {
+      latestMatch = snapshot;
+    }
+  }
+
+  relevantEntries.sort((left, right) => left.localeCompare(right));
+  const fingerprint = relevantEntries.join("|");
+
+  if (fingerprint === cachedLatestReadingProgressFingerprint) {
+    return cachedLatestReadingProgressSnapshot;
+  }
+
+  cachedLatestReadingProgressFingerprint = fingerprint;
+  cachedLatestReadingProgressSnapshot = latestMatch;
+
+  return latestMatch;
 }
 
 export function resolveResumeProgress(

@@ -1,21 +1,14 @@
 "use client";
 
 import { useDeferredValue, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 
-type CatalogSeries = {
-  id: string;
-  title: string;
-  slug: string;
+import {
+  PublicSeriesCard,
+  type PublicSeriesCardData,
+} from "@/app/_components/public-series-card";
+
+type CatalogSeries = PublicSeriesCardData & {
   descriptionShort: string | null;
-  coverUrl: string | null;
-  latestChapter: {
-    id: string;
-    slug: string;
-    number: string;
-    label: string | null;
-  } | null;
   taxonomyTerms: string[];
 };
 
@@ -147,33 +140,7 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
 
       <section className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 xl:grid-cols-5">
         {visibleSeries.map((entry) => (
-          <Link key={entry.id} href={`/series/${entry.slug}`} className="space-y-3">
-            {entry.coverUrl ? (
-              <Image
-                src={entry.coverUrl}
-                alt={entry.title}
-                width={320}
-                height={426}
-                sizes="(max-width: 768px) 45vw, (max-width: 1200px) 30vw, 18vw"
-                className="aspect-[3/4] h-auto w-full rounded-[1.6rem] object-cover transition duration-300 hover:scale-[1.02]"
-              />
-            ) : (
-              <div className="flex aspect-[3/4] items-center justify-center rounded-[1.6rem] bg-[var(--cover-fallback)] font-serif text-sm text-muted">
-                {entry.title}
-              </div>
-            )}
-            <div className="space-y-1">
-              <h2 className="font-serif text-2xl leading-tight">{entry.title}</h2>
-              {entry.latestChapter ? (
-                <p className="text-xs uppercase tracking-[0.14em] text-muted">
-                  Chapter {entry.latestChapter.number}
-                  {entry.latestChapter.label ? ` ${entry.latestChapter.label}` : ""}
-                </p>
-              ) : (
-                <p className="text-xs uppercase tracking-[0.14em] text-muted">No chapters</p>
-              )}
-            </div>
-          </Link>
+          <PublicSeriesCard key={entry.id} series={entry} />
         ))}
       </section>
 

@@ -134,6 +134,55 @@ export async function getSeriesCatalogData() {
   };
 }
 
+export async function getLibraryPageData(userId: string) {
+  const savedSeries = await withMissingStructureFallback(
+    () =>
+      prisma.savedSeries.findMany({
+        where: {
+          userId,
+          series: {
+            deletedAt: null,
+            visibility: SeriesVisibility.PUBLIC,
+          },
+        },
+        include: {
+          series: {
+            include: {
+              coverAsset: true,
+              chapters: {
+                where: {
+                  deletedAt: null,
+                  status: ChapterStatus.PUBLISHED,
+                },
+                orderBy: [{ number: "desc" }, { createdAt: "desc" }],
+                take: 1,
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+    [],
+  );
+
+  return savedSeries.map((entry) => ({
+    id: entry.series.id,
+    title: entry.series.title,
+    slug: entry.series.slug,
+    coverUrl: mapPublicAssetUrl(entry.series.coverAsset?.storageKey),
+    latestChapter: entry.series.chapters[0]
+      ? {
+          id: entry.series.chapters[0].id,
+          slug: entry.series.chapters[0].slug,
+          number: mapChapterNumber(entry.series.chapters[0].number),
+          label: entry.series.chapters[0].label,
+        }
+      : null,
+  }));
+}
+
 export async function resolveSeriesBySlug(slug: string) {
   const directMatch = await withMissingStructureFallback(
     () =>

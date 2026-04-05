@@ -30,6 +30,7 @@ TRUNCATE TABLE
   "_SeriesToTaxonomyTerm",
   "SocialLink",
   "InstanceSettings",
+  "SavedSeries",
   "ChapterPage",
   "ChapterSlugHistory",
   "SeriesSlugHistory",

@@ -3,7 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { SeriesSaveButton } from "@/app/_components/series-save-button";
 import { SeriesLongDescription } from "@/app/_components/series-long-description";
+import { getOptionalSession } from "@/app/_lib/auth/session";
+import { prisma } from "@/app/_lib/db/client";
 import { getPublicSeriesOrThrow } from "@/app/_lib/reader/queries";
 import { buildSeriesMetadata } from "@/app/_lib/seo/metadata";
 
@@ -30,11 +33,28 @@ export async function generateMetadata({
 
 export default async function SeriesPage({ params }: PageProps) {
   const { slug } = await params;
-  const result = await getPublicSeriesOrThrow(slug);
+  const [result, session] = await Promise.all([
+    getPublicSeriesOrThrow(slug),
+    getOptionalSession(),
+  ]);
 
   if (result.kind === "redirect") {
     redirect(`/series/${result.slug}`);
   }
+
+  const savedSeries = session?.user
+    ? await prisma.savedSeries.findUnique({
+        where: {
+          userId_seriesId: {
+            userId: session.user.id,
+            seriesId: result.series.id,
+          },
+        },
+        select: {
+          userId: true,
+        },
+      })
+    : null;
 
   return (
     <main className="shell space-y-12 py-10 sm:space-y-14 sm:py-12 lg:py-14">
@@ -55,9 +75,19 @@ export default async function SeriesPage({ params }: PageProps) {
         )}
 
         <div className="space-y-5 sm:space-y-6">
-          <div className="space-y-2.5 sm:space-y-3">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted">Series</p>
-            <h1 className="font-serif text-5xl leading-tight">{result.series.title}</h1>
+          <div className="space-y-3 sm:space-y-3.5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-2.5 sm:space-y-3">
+                <p className="text-xs uppercase tracking-[0.24em] text-muted">Series</p>
+                <h1 className="font-serif text-5xl leading-tight">{result.series.title}</h1>
+              </div>
+
+              <SeriesSaveButton
+                seriesId={result.series.id}
+                initialSaved={Boolean(savedSeries)}
+                signedIn={Boolean(session?.user)}
+              />
+            </div>
             {result.series.descriptionShort ? (
               <p className="max-w-2xl text-base leading-8 text-muted">
                 {result.series.descriptionShort}

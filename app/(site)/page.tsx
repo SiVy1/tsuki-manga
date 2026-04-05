@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { HomeContinueReading } from "@/app/_components/home-continue-reading";
 import { HomeCoverCloud } from "@/app/_components/home-cover-cloud";
 import { getHomePageData } from "@/app/_lib/reader/queries";
 
@@ -56,6 +57,10 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <div style={{ marginTop: "clamp(4.25rem, 7vw, 6.5rem)" }}>
+        <HomeContinueReading />
+      </div>
 
       <section
         id="latest"
