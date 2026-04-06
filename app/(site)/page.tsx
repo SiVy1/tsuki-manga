@@ -103,7 +103,11 @@ export default async function HomePage() {
         {data.latestChapters.length ? (
           <div className="grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-y-10 xl:grid-cols-4">
             {data.latestChapters.map((chapter) => (
-              <Link key={chapter.id} href={`/series/${chapter.series.slug}`} className="space-y-3">
+              <Link
+                key={chapter.id}
+                href={`/chapter/${chapter.id}/${chapter.slug}`}
+                className="space-y-3"
+              >
                 {chapter.series.coverUrl ? (
                   <Image
                     src={chapter.series.coverUrl}
@@ -127,6 +131,9 @@ export default async function HomePage() {
                     Chapter {chapter.number}
                     {chapter.label ? ` ${chapter.label}` : ""}
                   </p>
+                  {chapter.title ? (
+                    <p className="text-sm leading-6 text-muted">{chapter.title}</p>
+                  ) : null}
                 </div>
               </Link>
             ))}
