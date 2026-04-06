@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { HomeContinueReading } from "@/app/_components/home-continue-reading";
 import { HomeCoverCloud } from "@/app/_components/home-cover-cloud";
+import { PublicSeriesCard } from "@/app/_components/public-series-card";
 import { getHomePageData } from "@/app/_lib/reader/queries";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +62,31 @@ export default async function HomePage() {
       <div style={{ marginTop: "clamp(4.25rem, 7vw, 6.5rem)" }}>
         <HomeContinueReading />
       </div>
+
+      {data.featuredSeries.length ? (
+        <section
+          className="shell space-y-6 md:space-y-7"
+          style={{ marginTop: "clamp(3.25rem, 6vw, 5.25rem)" }}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-xs uppercase tracking-[0.24em] text-muted">
+                Featured series
+              </p>
+              <h2 className="font-serif text-3xl md:text-4xl">More to explore</h2>
+            </div>
+            <Link href="/series" className="text-sm text-muted">
+              All series
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-y-10 xl:grid-cols-4">
+            {data.featuredSeries.map((series) => (
+              <PublicSeriesCard key={series.id} series={series} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section
         id="latest"

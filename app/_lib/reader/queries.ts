@@ -19,6 +19,34 @@ function mapChapterNumber(value: { toString(): string }) {
   return value.toString();
 }
 
+function mapSeriesCardData(input: {
+  id: string;
+  title: string;
+  slug: string;
+  coverAsset?: { storageKey: string } | null;
+  chapters: Array<{
+    id: string;
+    slug: string;
+    number: { toString(): string };
+    label: string | null;
+  }>;
+}) {
+  return {
+    id: input.id,
+    title: input.title,
+    slug: input.slug,
+    coverUrl: mapPublicAssetUrl(input.coverAsset?.storageKey),
+    latestChapter: input.chapters[0]
+      ? {
+          id: input.chapters[0].id,
+          slug: input.chapters[0].slug,
+          number: mapChapterNumber(input.chapters[0].number),
+          label: input.chapters[0].label,
+        }
+      : null,
+  };
+}
+
 async function withMissingStructureFallback<T>(
   load: () => Promise<T>,
   fallback: T,
@@ -36,34 +64,62 @@ async function withMissingStructureFallback<T>(
 
 export async function getHomePageData() {
   const instanceSettings = await getInstanceSettings();
-  const latestChapters = await withMissingStructureFallback(
-    () =>
-      prisma.chapter.findMany({
-        where: {
-          status: ChapterStatus.PUBLISHED,
-          deletedAt: null,
-          series: {
+  const [latestChapters, featuredSeries] = await Promise.all([
+    withMissingStructureFallback(
+      () =>
+        prisma.chapter.findMany({
+          where: {
+            status: ChapterStatus.PUBLISHED,
+            deletedAt: null,
+            series: {
+              deletedAt: null,
+              visibility: SeriesVisibility.PUBLIC,
+            },
+          },
+          include: {
+            series: {
+              include: {
+                coverAsset: true,
+              },
+            },
+          },
+          orderBy: {
+            publishedAt: "desc",
+          },
+          take: 12,
+        }),
+      [],
+    ),
+    withMissingStructureFallback(
+      () =>
+        prisma.series.findMany({
+          where: {
             deletedAt: null,
             visibility: SeriesVisibility.PUBLIC,
           },
-        },
-        include: {
-          series: {
-            include: {
-              coverAsset: true,
+          include: {
+            coverAsset: true,
+            chapters: {
+              where: {
+                deletedAt: null,
+                status: ChapterStatus.PUBLISHED,
+              },
+              orderBy: [{ number: "desc" }, { createdAt: "desc" }],
+              take: 1,
             },
           },
-        },
-        orderBy: {
-          publishedAt: "desc",
-        },
-        take: 12,
-      }),
-    [],
-  );
+          orderBy: {
+            updatedAt: "desc",
+          },
+          take: 4,
+        }),
+      [],
+    ),
+  ]);
 
   return {
     instanceSettings,
+    featuredSeries: featuredSeries.map((series) => mapSeriesCardData(series)),
     latestChapters: latestChapters.map((chapter) => ({
       id: chapter.id,
       slug: chapter.slug,
@@ -116,20 +172,9 @@ export async function getSeriesCatalogData() {
   return {
     instanceSettings,
     series: seriesList.map((series) => ({
-      id: series.id,
-      title: series.title,
-      slug: series.slug,
       descriptionShort: series.descriptionShort,
-      coverUrl: mapPublicAssetUrl(series.coverAsset?.storageKey),
       taxonomyTerms: series.taxonomyTerms.map((term) => term.name),
-      latestChapter: series.chapters[0]
-        ? {
-            id: series.chapters[0].id,
-            slug: series.chapters[0].slug,
-            number: mapChapterNumber(series.chapters[0].number),
-            label: series.chapters[0].label,
-          }
-        : null,
+      ...mapSeriesCardData(series),
     })),
   };
 }
@@ -168,18 +213,7 @@ export async function getLibraryPageData(userId: string) {
   );
 
   return savedSeries.map((entry) => ({
-    id: entry.series.id,
-    title: entry.series.title,
-    slug: entry.series.slug,
-    coverUrl: mapPublicAssetUrl(entry.series.coverAsset?.storageKey),
-    latestChapter: entry.series.chapters[0]
-      ? {
-          id: entry.series.chapters[0].id,
-          slug: entry.series.chapters[0].slug,
-          number: mapChapterNumber(entry.series.chapters[0].number),
-          label: entry.series.chapters[0].label,
-        }
-      : null,
+    ...mapSeriesCardData(entry.series),
   }));
 }
 
