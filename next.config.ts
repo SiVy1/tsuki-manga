@@ -54,7 +54,7 @@ const nextConfig: NextConfig = {
   experimental: {
     authInterrupts: true,
     serverActions: {
-      bodySizeLimit: "256mb",
+      bodySizeLimit: "2gb",
     },
   },
   images: {
@@ -65,7 +65,10 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: buildSecurityHeaders(process.env.S3_PUBLIC_BASE_URL),
+        headers: buildSecurityHeaders(
+          process.env.S3_PUBLIC_BASE_URL,
+          process.env.UMAMI_SCRIPT_URL,
+        ),
       },
     ];
   },

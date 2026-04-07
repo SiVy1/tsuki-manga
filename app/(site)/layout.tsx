@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Script from "next/script";
 
 import { signOut } from "@/app/_lib/auth";
 import { saveThemePreferenceAction } from "@/app/_actions/preferences/actions";
@@ -6,6 +7,7 @@ import { getOptionalSession } from "@/app/_lib/auth/session";
 import { canAccessDashboard } from "@/app/_lib/permissions/bits";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
 import { getSiteContent } from "@/app/_lib/content/site-content";
+import { getEnv } from "@/app/_lib/settings/env";
 import { getInstanceSettings } from "@/app/_lib/settings/instance";
 import { storageDriver } from "@/app/_lib/storage";
 import { SubmitButton } from "@/app/_components/submit-button";
@@ -39,6 +41,9 @@ export default async function SiteLayout({
   const groupMark = getGroupMark(instanceSettings.groupName) || "TM";
   const footerDescription =
     instanceSettings.groupDescription ?? instanceSettings.siteDescription;
+  const env = getEnv();
+  const hasUmami =
+    Boolean(env.UMAMI_SCRIPT_URL) && Boolean(env.UMAMI_WEBSITE_ID);
 
   async function signOutAction() {
     "use server";
@@ -50,6 +55,14 @@ export default async function SiteLayout({
 
   return (
     <>
+      {hasUmami ? (
+        <Script
+          id="umami-analytics"
+          strategy="afterInteractive"
+          src={env.UMAMI_SCRIPT_URL}
+          data-website-id={env.UMAMI_WEBSITE_ID}
+        />
+      ) : null}
       <header className="border-b border-border/70 bg-background/95">
         <div className="shell flex flex-wrap items-end justify-between gap-x-8 gap-y-3 py-4 md:items-center md:py-5">
           <Link href="/" className="flex min-w-0 items-center gap-3">

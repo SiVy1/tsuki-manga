@@ -13,6 +13,8 @@ export const envSchema = z.object({
   DISCORD_CLIENT_ID: z.string().optional().or(z.literal("")),
   DISCORD_CLIENT_SECRET: z.string().optional().or(z.literal("")),
   DISCORD_BOOTSTRAP_ADMIN_ID: z.string().optional().or(z.literal("")),
+  UMAMI_SCRIPT_URL: z.string().url().optional().or(z.literal("")),
+  UMAMI_WEBSITE_ID: z.string().optional().or(z.literal("")),
   ENABLE_TEST_AUTH: z
     .enum(["true", "false", "1", "0", "TRUE", "FALSE"])
     .optional()

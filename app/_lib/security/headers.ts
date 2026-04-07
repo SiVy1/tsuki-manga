@@ -23,11 +23,29 @@ export function resolvePublicAssetOrigin(rawPublicBaseUrl: string | undefined) {
   }
 }
 
-export function buildContentSecurityPolicy(rawPublicAssetBaseUrl?: string) {
+export function resolveOrigin(rawUrl: string | undefined) {
+  if (!rawUrl) {
+    return null;
+  }
+
+  try {
+    return new URL(rawUrl).origin;
+  } catch {
+    return null;
+  }
+}
+
+export function buildContentSecurityPolicy(
+  rawPublicAssetBaseUrl?: string,
+  rawAnalyticsScriptUrl?: string,
+) {
   const imgSources = appendIfMissing(
     ["'self'", "data:", "blob:"],
     resolvePublicAssetOrigin(rawPublicAssetBaseUrl),
   );
+  const analyticsOrigin = resolveOrigin(rawAnalyticsScriptUrl);
+  const scriptSources = appendIfMissing(["'self'", "'unsafe-inline'"], analyticsOrigin);
+  const connectSources = appendIfMissing(["'self'"], analyticsOrigin);
 
   const directives: Array<[string, string[]]> = [
     ["default-src", ["'self'"]],
@@ -35,11 +53,11 @@ export function buildContentSecurityPolicy(rawPublicAssetBaseUrl?: string) {
     ["frame-ancestors", ["'none'"]],
     ["object-src", ["'none'"]],
     ["form-action", ["'self'"]],
-    ["script-src", ["'self'", "'unsafe-inline'"]],
+    ["script-src", scriptSources],
     ["style-src", ["'self'", "'unsafe-inline'"]],
     ["img-src", imgSources],
     ["font-src", ["'self'", "data:"]],
-    ["connect-src", ["'self'"]],
+    ["connect-src", connectSources],
     ["media-src", ["'self'", "blob:"]],
     ["frame-src", ["'none'"]],
   ];
@@ -47,11 +65,14 @@ export function buildContentSecurityPolicy(rawPublicAssetBaseUrl?: string) {
   return directives.map(([name, values]) => `${name} ${values.join(" ")}`).join("; ");
 }
 
-export function buildSecurityHeaders(rawPublicAssetBaseUrl?: string): SecurityHeader[] {
+export function buildSecurityHeaders(
+  rawPublicAssetBaseUrl?: string,
+  rawAnalyticsScriptUrl?: string,
+): SecurityHeader[] {
   return [
     {
       key: "Content-Security-Policy",
-      value: buildContentSecurityPolicy(rawPublicAssetBaseUrl),
+      value: buildContentSecurityPolicy(rawPublicAssetBaseUrl, rawAnalyticsScriptUrl),
     },
     {
       key: "X-Content-Type-Options",
