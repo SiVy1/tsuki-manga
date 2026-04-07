@@ -80,6 +80,18 @@ pnpm test:integration
 pnpm build
 ```
 
+## Public content customization
+
+`Tsuki Manga` now includes a simple public content file at [`content/site.json`](./content/site.json).
+
+You can customize:
+
+- public community rules shown at `/rules`
+- a recruitment announcement shown at `/recruitment`
+- the optional recruitment callout on the homepage
+
+The intended workflow is simple: edit `content/site.json`, adjust the text for your group, and redeploy the app.
+
 ## Documentation
 
 - [Design canon](./docs/design.md)

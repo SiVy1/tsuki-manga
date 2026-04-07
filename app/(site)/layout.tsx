@@ -5,6 +5,7 @@ import { saveThemePreferenceAction } from "@/app/_actions/preferences/actions";
 import { getOptionalSession } from "@/app/_lib/auth/session";
 import { canAccessDashboard } from "@/app/_lib/permissions/bits";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
+import { getSiteContent } from "@/app/_lib/content/site-content";
 import { getInstanceSettings } from "@/app/_lib/settings/instance";
 import { storageDriver } from "@/app/_lib/storage";
 import { SubmitButton } from "@/app/_components/submit-button";
@@ -27,6 +28,7 @@ export default async function SiteLayout({
     getOptionalSession(),
     getInstanceSettings(),
   ]);
+  const siteContent = await getSiteContent();
   const dashboardVisible = session?.user
     ? canAccessDashboard(session.user.permissionBits)
     : false;
@@ -80,6 +82,16 @@ export default async function SiteLayout({
             >
               Series
             </Link>
+            {siteContent.recruitment.enabled ? (
+              <Link href="/recruitment" className="transition hover:text-foreground">
+                Recruitment
+              </Link>
+            ) : null}
+            {siteContent.rules.enabled ? (
+              <Link href="/rules" className="transition hover:text-foreground">
+                Rules
+              </Link>
+            ) : null}
             {session?.user ? (
               <Link href="/library" className="transition hover:text-foreground">
                 Library
@@ -137,6 +149,16 @@ export default async function SiteLayout({
               <Link href="/series" className="transition hover:text-foreground">
                 Series
               </Link>
+              {siteContent.recruitment.enabled ? (
+                <Link href="/recruitment" className="transition hover:text-foreground">
+                  Recruitment
+                </Link>
+              ) : null}
+              {siteContent.rules.enabled ? (
+                <Link href="/rules" className="transition hover:text-foreground">
+                  Rules
+                </Link>
+              ) : null}
               <Link href="/feed.xml" className="transition hover:text-foreground">
                 RSS feed
               </Link>

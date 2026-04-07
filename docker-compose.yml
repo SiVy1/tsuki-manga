@@ -45,8 +45,8 @@ services:
     profiles: ["minio"]
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -66,11 +66,13 @@ services:
         condition: service_healthy
     restart: "no"
     environment:
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
       S3_BUCKET: ${S3_BUCKET:-tsuki-manga}
     entrypoint:
       - /bin/sh
       - -c
-      - mc alias set local http://minio:9000 minioadmin minioadmin && mc mb --ignore-existing "local/$S3_BUCKET"
+      - mc alias set local http://minio:9000 "$S3_ACCESS_KEY_ID" "$S3_SECRET_ACCESS_KEY" && mc mb --ignore-existing "local/$S3_BUCKET"
 
 volumes:
   tsuki_postgres:

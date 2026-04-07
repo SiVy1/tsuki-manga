@@ -4,12 +4,13 @@ import Link from "next/link";
 import { HomeContinueReading } from "@/app/_components/home-continue-reading";
 import { HomeCoverCloud } from "@/app/_components/home-cover-cloud";
 import { PublicSeriesCard } from "@/app/_components/public-series-card";
+import { getSiteContent } from "@/app/_lib/content/site-content";
 import { getHomePageData } from "@/app/_lib/reader/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const data = await getHomePageData();
+  const [data, siteContent] = await Promise.all([getHomePageData(), getSiteContent()]);
   const heroCovers = Array.from(
     new Map(
       data.latestChapters
@@ -62,6 +63,34 @@ export default async function HomePage() {
       <div style={{ marginTop: "clamp(4.25rem, 7vw, 6.5rem)" }}>
         <HomeContinueReading />
       </div>
+
+      {siteContent.recruitment.enabled ? (
+        <section
+          className="shell"
+          style={{ marginTop: "clamp(3rem, 5vw, 4.5rem)" }}
+        >
+          <div className="flex flex-col gap-4 border-t border-border/70 py-5 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-2xl space-y-2">
+              <p className="text-xs uppercase tracking-[0.22em] text-muted">Recruitment</p>
+              <h2 className="font-serif text-3xl md:text-[2.1rem]">
+                {siteContent.recruitment.title}
+              </h2>
+              {siteContent.recruitment.summary ? (
+                <p className="text-sm leading-7 text-muted">
+                  {siteContent.recruitment.summary}
+                </p>
+              ) : null}
+            </div>
+
+            <Link
+              href="/recruitment"
+              className="text-sm text-muted underline underline-offset-4 transition hover:text-foreground"
+            >
+              View open roles
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       {data.featuredSeries.length ? (
         <section

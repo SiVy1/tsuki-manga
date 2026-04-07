@@ -1,0 +1,29 @@
+{
+  "rules": {
+    "enabled": true,
+    "title": "Community rules",
+    "updatedAt": "2026-04-07",
+    "items": [
+      "Respect the release pace and publishing decisions of the group.",
+      "Do not reupload our releases to other sites without permission.",
+      "Do not remove staff credits, notes, or release information.",
+      "Use official channels if you want to report broken chapters or missing pages.",
+      "Keep contact with the team respectful and concise."
+    ]
+  },
+  "recruitment": {
+    "enabled": true,
+    "title": "We are recruiting",
+    "summary": "We are looking for a few reliable people who want to help us release chapters on a steady schedule.",
+    "roles": [
+      {
+        "title": "Translator",
+        "description": "Comfortable reading Japanese, Korean, or Chinese source material and turning it into clear English."
+      }
+    ],
+    "contact": {
+      "label": "Apply via Discord",
+      "value": "Open a ticket in our Discord server or message the team lead directly."
+    }
+  }
+}
