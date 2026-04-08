@@ -1,0 +1,267 @@
+{
+  "Common": {
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "delete": "Delete",
+      "edit": "Edit",
+      "reply": "Reply",
+      "report": "Report",
+      "signIn": "Sign in",
+      "signOut": "Sign out",
+      "dashboard": "Dashboard",
+      "backHome": "Back home",
+      "browseCatalog": "Browse catalog",
+      "series": "Series",
+      "library": "Library",
+      "recruitment": "Recruitment",
+      "rules": "Rules",
+      "rssFeed": "RSS feed",
+      "openChapter": "Open chapter",
+      "openDashboard": "Open dashboard",
+      "returnHome": "Return home",
+      "allSeries": "All series",
+      "read": "Read",
+      "continueReading": "Continue reading",
+      "openSeries": "Open series",
+      "clear": "Clear",
+      "clearSearch": "Clear search",
+      "clearFilter": "Clear filter",
+      "resetCatalog": "Reset catalog",
+      "expand": "Expand",
+      "collapse": "Collapse",
+      "startOver": "Start over",
+      "resume": "Resume",
+      "nextChapter": "Next chapter",
+      "previousChapter": "Previous chapter",
+      "backToSeries": "Back to series"
+    },
+    "status": {
+      "saving": "Saving...",
+      "signingIn": "Signing in...",
+      "signingOut": "Signing out...",
+      "redirecting": "Redirecting...",
+      "sending": "Sending...",
+      "hiding": "Hiding...",
+      "removing": "Removing...",
+      "resolving": "Resolving...",
+      "rejecting": "Rejecting...",
+      "deleting": "Deleting..."
+    },
+    "entities": {
+      "reader": "Reader",
+      "currentUser": "current user",
+      "chapter": "Chapter"
+    },
+    "theme": {
+      "groupLabel": "Theme mode",
+      "system": "System",
+      "systemDescription": "Follow the device theme",
+      "light": "Light",
+      "lightDescription": "Keep the calm paper-like palette",
+      "dark": "Dark",
+      "darkDescription": "Use the warm night reading palette"
+    }
+  },
+  "LocaleToggle": {
+    "groupLabel": "Language",
+    "options": {
+      "en": "EN",
+      "pl": "PL"
+    }
+  },
+  "SiteLayout": {
+    "groupLabel": "Scanlation group",
+    "publishedBy": "Published by"
+  },
+  "HomePage": {
+    "heroFallback": "Reader-first releases from one scanlation group.",
+    "latestUpdates": "Latest updates",
+    "featuredSeries": "Featured series",
+    "moreToExplore": "More to explore",
+    "recruitment": {
+      "eyebrow": "Recruitment",
+      "viewOpenRoles": "View open roles"
+    },
+    "emptyLatest": "No published chapters."
+  },
+  "SeriesCatalogPage": {
+    "eyebrow": "Series",
+    "title": "Catalog"
+  },
+  "SeriesPage": {
+    "eyebrow": "Series",
+    "chaptersTitle": "Chapters",
+    "emptyChapters": "No published chapters."
+  },
+  "SeriesCard": {
+    "latestChapter": "Chapter {number}{label}",
+    "noChapters": "No chapters"
+  },
+  "SeriesCatalog": {
+    "searchAriaLabel": "Search series",
+    "searchPlaceholder": "Search",
+    "filters": "Filters",
+    "hideFilters": "Hide filters",
+    "clear": "Clear",
+    "searchChip": "Search: {query}",
+    "browseByTag": "Browse by tag",
+    "all": "All",
+    "resultsCount": "{visible} of {total} series",
+    "filtered": "Filtered",
+    "emptyTitle": "No matching series",
+    "emptyDescription": "Try another search or clear the current filter to browse the full catalog.",
+    "clearSearch": "Clear search",
+    "clearFilter": "Clear filter",
+    "resetCatalog": "Reset catalog"
+  },
+  "SeriesSave": {
+    "saved": "Saved",
+    "saveSeries": "Save series"
+  },
+  "SeriesLongDescription": {
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "LibraryPage": {
+    "eyebrow": "Library",
+    "title": "Saved series",
+    "description": "Saved series for quick return.",
+    "emptyTitle": "Nothing saved yet",
+    "emptyDescription": "Save a series to keep it close and come back to it later."
+  },
+  "ContinueReading": {
+    "eyebrow": "Continue reading",
+    "fallbackTitle": "Continue where you left off",
+    "chapterLabel": "Chapter {number}{label}"
+  },
+  "RecruitmentPage": {
+    "metadataTitle": "Recruitment",
+    "eyebrow": "Join the team",
+    "fallbackSummary": "No public recruitment announcement is available right now.",
+    "closed": "Recruitment is currently closed for this instance.",
+    "contactEyebrow": "Contact"
+  },
+  "RulesPage": {
+    "metadataTitle": "Community rules",
+    "eyebrow": "Public info",
+    "updatedAt": "Updated {date}",
+    "empty": "No public rules have been published for this instance yet."
+  },
+  "SignInPage": {
+    "eyebrow": "Public sign in",
+    "title": "Sign in",
+    "accessEyebrow": "Access",
+    "panelTitle": "Sign in to Tsuki Manga",
+    "continueWithDiscord": "Continue with Discord",
+    "discordNotConfigured": "Discord OAuth is not configured in this environment.",
+    "signInFailed": "Sign in failed.",
+    "authError": "Sign in failed. Check the credentials or enabled provider.",
+    "signedInAs": "Signed in as {name}",
+    "testAuthDescription": "Test auth is enabled. You can switch to another seeded account below without touching your local database on port 5432.",
+    "signOutFirst": "Sign out first",
+    "continueWithTestAuth": "Continue with test auth",
+    "testAuth": {
+      "providerAccountId": "Provider account ID",
+      "displayName": "Display name",
+      "sharedSecret": "Shared secret"
+    }
+  },
+  "ChapterPage": {
+    "chapterTitle": "Chapter {number}{label}",
+    "chapterTitleWithName": "Chapter {number}{label} - {title}",
+    "navigationAria": "Chapter navigation",
+    "endEyebrow": "End of chapter",
+    "latestReached": "You reached the latest chapter",
+    "continueNext": "Continue straight into the next published chapter.",
+    "continueNone": "There is no newer published chapter yet. You can return to {seriesTitle} and browse the full chapter list."
+  },
+  "Reader": {
+    "modeLabel": "Reading mode",
+    "savePreference": "Saving preference",
+    "resumeFromPage": "Resume from page {page}",
+    "resume": "Resume",
+    "startOver": "Start over",
+    "pageLabel": "Page {current} of {total}",
+    "tapHelp": "Tap left for next. Tap right for previous.",
+    "fitLabel": "Page fit",
+    "fitPage": "Fit page",
+    "fitWidth": "Fit width",
+    "loadingPage": "Loading page",
+    "modes": {
+      "WEBTOON": "Webtoon",
+      "VERTICAL": "Left to right",
+      "RIGHT_TO_LEFT": "Right to left"
+    }
+  },
+  "Comments": {
+    "sectionEyebrow": "Discussion",
+    "sectionTitle": "Discussion",
+    "sectionDescription": "Keep it short, readable, and close to the chapter.",
+    "count": "{count, plural, one {# comment} other {# comments}}",
+    "postComment": "Post comment",
+    "signInPromptTitle": "Sign in to join the discussion",
+    "signInPromptDescription": "You can read comments without an account, but posting and reporting require sign in.",
+    "emptyTitle": "No discussion yet.",
+    "emptySignedIn": "Start the first thread for this chapter.",
+    "emptySignedOut": "Sign in to leave the first comment for this chapter.",
+    "composer": {
+      "placeholder": "Write a comment...",
+      "createPlaceholder": "Add a comment about this chapter...",
+      "replyPlaceholder": "Write a reply...",
+      "pending": "Saving..."
+    },
+    "item": {
+      "edited": "Edited {date}",
+      "reply": "Reply",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save"
+    },
+    "placeholders": {
+      "deleted": "Comment removed.",
+      "hidden": "Comment hidden by moderation."
+    },
+    "report": {
+      "button": "Report",
+      "reason": "Reason",
+      "details": "Details",
+      "detailsPlaceholder": "Add a short note if needed.",
+      "send": "Send report",
+      "sent": "Report sent.",
+      "pending": "Sending...",
+      "reasons": {
+        "SPAM": "Spam",
+        "HARASSMENT": "Harassment",
+        "HATE": "Hate",
+        "SEXUAL_CONTENT": "Sexual content",
+        "VIOLENCE": "Violence",
+        "MISINFORMATION": "Misinformation",
+        "OTHER": "Other"
+      }
+    }
+  },
+  "DashboardComments": {
+    "eyebrow": "Comments",
+    "title": "Open reports",
+    "description": "Review reported chapter comments without turning moderation into a separate control center.",
+    "noticeHidden": "Comment hidden.",
+    "noticeRemoved": "Comment removed.",
+    "noticeResolved": "Report resolved.",
+    "noticeRejected": "Report rejected.",
+    "card": {
+      "reports": "{count, plural, one {# report} other {# reports}}",
+      "reportedBy": "Reported comment by {author}. Posted {date}.",
+      "commentLabel": "Comment",
+      "moderatorNote": "Moderator note from report: {details}"
+    },
+    "actions": {
+      "hide": "Hide",
+      "delete": "Delete",
+      "resolve": "Resolve",
+      "reject": "Reject"
+    },
+    "emptyTitle": "No open reports.",
+    "emptyDescription": "The moderation queue is clear for now."
+  }
+}

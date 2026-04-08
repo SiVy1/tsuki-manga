@@ -3,6 +3,7 @@ import {
   CommentStatus,
   SeriesVisibility,
 } from "@/generated/prisma/client";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { prisma } from "@/app/_lib/db/client";
 import { formatDateTime } from "@/app/_lib/utils/formatting";
@@ -15,16 +16,19 @@ import type {
 function resolveAuthorName(input: {
   displayName: string | null;
   name: string | null;
-}) {
-  return input.displayName ?? input.name ?? "Reader";
+}, fallbackName: string) {
+  return input.displayName ?? input.name ?? fallbackName;
 }
 
-function getPublicPlaceholder(status: CommentStatus) {
+function getPublicPlaceholder(
+  status: CommentStatus,
+  t: Awaited<ReturnType<typeof getTranslations<"Comments.placeholders">>>,
+) {
   switch (status) {
     case CommentStatus.DELETED:
-      return "Comment removed.";
+      return t("deleted");
     case CommentStatus.HIDDEN:
-      return "Comment hidden by moderation.";
+      return t("hidden");
     default:
       return null;
   }
@@ -76,8 +80,11 @@ function mapPublicCommentItem(
   },
   viewerUserId: string | null,
   threadRootId: string,
+  locale: string,
+  readerLabel: string,
+  placeholderT: Awaited<ReturnType<typeof getTranslations<"Comments.placeholders">>>,
 ): PublicCommentItem {
-  const placeholder = getPublicPlaceholder(comment.status);
+  const placeholder = getPublicPlaceholder(comment.status, placeholderT);
   const isAuthor = Boolean(viewerUserId && viewerUserId === comment.authorId);
 
   return {
@@ -87,13 +94,13 @@ function mapPublicCommentItem(
     status: comment.status,
     body: comment.status === CommentStatus.VISIBLE ? comment.body : null,
     createdAt: comment.createdAt.toISOString(),
-    createdAtLabel: formatDateTime(comment.createdAt),
-    editedAtLabel: comment.editedAt ? formatDateTime(comment.editedAt) : null,
+    createdAtLabel: formatDateTime(comment.createdAt, locale),
+    editedAtLabel: comment.editedAt ? formatDateTime(comment.editedAt, locale) : null,
     isEdited: comment.isEdited,
     author: comment.author
       ? {
           id: comment.author.id,
-          name: resolveAuthorName(comment.author),
+          name: resolveAuthorName(comment.author, readerLabel),
           image: comment.author.image,
         }
       : null,
@@ -107,7 +114,14 @@ function mapPublicCommentItem(
     placeholder,
     replies:
       comment.replies?.map((reply) =>
-        mapPublicCommentItem(reply, viewerUserId, threadRootId),
+        mapPublicCommentItem(
+          reply,
+          viewerUserId,
+          threadRootId,
+          locale,
+          readerLabel,
+          placeholderT,
+        ),
       ) ?? [],
   };
 }
@@ -117,6 +131,11 @@ export async function getChapterDiscussionData(
   chapterSlug: string,
   viewerUserId: string | null,
 ): Promise<ChapterDiscussionData> {
+  const [locale, placeholderT, entityT] = await Promise.all([
+    getLocale(),
+    getTranslations("Comments.placeholders"),
+    getTranslations("Common.entities"),
+  ]);
   const chapter = await prisma.chapter.findFirst({
     where: {
       id: chapterId,
@@ -229,6 +248,9 @@ export async function getChapterDiscussionData(
         },
         viewerUserId,
         comment.id,
+        locale,
+        entityT("reader"),
+        placeholderT,
       );
     })
     .filter((comment): comment is PublicCommentItem => comment !== null);

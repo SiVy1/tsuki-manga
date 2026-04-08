@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
 type SeriesLongDescriptionProps = {
@@ -9,6 +10,7 @@ type SeriesLongDescriptionProps = {
 export function SeriesLongDescription({
   description,
 }: SeriesLongDescriptionProps) {
+  const t = useTranslations("SeriesLongDescription");
   const [expanded, setExpanded] = useState(false);
   const contentId = useId();
 
@@ -29,7 +31,7 @@ export function SeriesLongDescription({
         onClick={() => setExpanded((current) => !current)}
         className="rounded-full border border-border px-4 py-2 text-sm text-muted transition hover:border-foreground/20 hover:text-foreground"
       >
-        {expanded ? "Collapse" : "Expand"}
+        {expanded ? t("collapse") : t("expand")}
       </button>
     </section>
   );

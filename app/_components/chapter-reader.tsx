@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   useEffect,
   useRef,
@@ -13,7 +14,6 @@ import {
   getPageList,
   getReadingProgressStorageKey,
   notifyReadingProgressStoreChanged,
-  readingModes,
   readingModeStorageKey,
   readerModeValues,
   resolveResumeProgress,
@@ -44,10 +44,7 @@ const rtlFitModeStorageKey = "tsuki-reader-rtl-fit-mode";
 
 type RtlFitMode = "PAGE" | "WIDTH";
 
-const rtlFitModes = [
-  { id: "PAGE", label: "Fit page" },
-  { id: "WIDTH", label: "Fit width" },
-] as const satisfies ReadonlyArray<{ id: RtlFitMode; label: string }>;
+const rtlFitModes = ["PAGE", "WIDTH"] as const satisfies ReadonlyArray<RtlFitMode>;
 
 function subscribeToReadingMode(listener: () => void) {
   readingModeListeners.add(listener);
@@ -136,6 +133,7 @@ export function ChapterReader({
   pages,
   onPersistReadingMode,
 }: ChapterReaderProps) {
+  const t = useTranslations("Reader");
   const readingMode = useSyncExternalStore(
     subscribeToReadingMode,
     () => getStoredReadingMode(defaultMode),
@@ -558,37 +556,37 @@ export function ChapterReader({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-[11px] uppercase tracking-[0.18em] text-muted">
-              Reading mode
+              {t("modeLabel")}
             </span>
             <div className="flex flex-wrap gap-2">
-              {readingModes.map((mode) => (
+              {readerModeValues.map((mode) => (
                 <button
-                  key={mode.id}
+                  key={mode}
                   type="button"
                   onClick={() => {
-                    saveStoredReadingMode(mode.id);
+                    saveStoredReadingMode(mode);
 
                     if (persistToAccount && onPersistReadingMode) {
                       startTransition(async () => {
                         await onPersistReadingMode({
-                          readingMode: mode.id,
+                          readingMode: mode,
                         });
                       });
                     }
                   }}
                   className={`rounded-full px-3 py-1.5 text-[13px] transition sm:text-sm ${
-                    readingMode === mode.id
+                    readingMode === mode
                       ? "bg-foreground text-background"
                       : "text-muted hover:text-foreground"
                   }`}
                 >
-                  {mode.label}
+                  {t(`modes.${mode}`)}
                 </button>
               ))}
             </div>
           </div>
           {isPending ? (
-            <span className="text-xs text-muted">Saving preference</span>
+            <span className="text-xs text-muted">{t("savePreference")}</span>
           ) : null}
         </div>
       </div>
@@ -596,7 +594,7 @@ export function ChapterReader({
       {resumeProgress ? (
         <div className="flex flex-wrap items-center gap-2.5 border-b border-t border-border/60 py-2.5 text-[13px] sm:gap-3 sm:py-3 sm:text-sm">
           <p className="text-foreground">
-            Resume from page {resumeProgress.visiblePageNumber}
+            {t("resumeFromPage", { page: resumeProgress.visiblePageNumber })}
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -604,14 +602,14 @@ export function ChapterReader({
               onClick={handleResumeReading}
               className="text-foreground underline decoration-border underline-offset-4 transition hover:decoration-foreground"
             >
-              Resume
+              {t("resume")}
             </button>
             <button
               type="button"
               onClick={handleStartFromBeginning}
               className="text-muted transition hover:text-foreground"
             >
-              Start over
+              {t("startOver")}
             </button>
           </div>
         </div>
@@ -621,31 +619,34 @@ export function ChapterReader({
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-2.5 sm:pb-3">
           <div className="space-y-1">
             <p className="text-[13px] text-foreground sm:text-sm">
-              Page {visiblePages.length - currentRtlIndex} of {visiblePages.length}
+              {t("pageLabel", {
+                current: visiblePages.length - currentRtlIndex,
+                total: visiblePages.length,
+              })}
             </p>
             <p className="text-xs text-muted">
-              Tap left for next. Tap right for previous.
+              {t("tapHelp")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-[11px] uppercase tracking-[0.18em] text-muted">
-              Page fit
+              {t("fitLabel")}
             </span>
             <div className="flex flex-wrap gap-1">
               {rtlFitModes.map((mode) => (
                 <button
-                  key={mode.id}
+                  key={mode}
                   type="button"
                   onClick={() => {
-                    setStoredRtlFitMode(mode.id);
+                    setStoredRtlFitMode(mode);
                   }}
                   className={`rounded-full px-3 py-1.5 transition ${
-                    rtlFitMode === mode.id
+                    rtlFitMode === mode
                       ? "bg-foreground text-background"
                       : "text-muted hover:text-foreground"
                   }`}
                 >
-                  {mode.label}
+                  {t(mode === "PAGE" ? "fitPage" : "fitWidth")}
                 </button>
               ))}
             </div>
@@ -675,12 +676,12 @@ export function ChapterReader({
                   style={{
                     aspectRatio: rtlPageAspectRatio,
                   }}
-                >
-                  <div className="text-xs uppercase tracking-[0.18em] text-muted">
-                    Loading page
+                  >
+                    <div className="text-xs uppercase tracking-[0.18em] text-muted">
+                      {t("loadingPage")}
+                    </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 key={currentRtlImageKey ?? currentRtlPage.id}

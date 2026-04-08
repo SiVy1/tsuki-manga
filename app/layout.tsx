@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { Newsreader, Raleway } from "next/font/google";
 import Script from "next/script";
 
@@ -73,29 +75,32 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getOptionalSession();
+  const [locale, messages] = await Promise.all([getLocale(), getMessages()]);
   const defaultThemeMode = (session?.user?.themePreference ?? "SYSTEM") as ThemeModeValue;
   const persistAccountTheme = Boolean(session?.user);
 
   return (
     <html
-      lang="en"
+      lang={locale}
       data-theme={defaultThemeMode === "DARK" ? "dark" : "light"}
       suppressHydrationWarning
       className={`${newsreader.variable} ${raleway.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Script
-          id="theme-init"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: buildThemeInitScript(defaultThemeMode, persistAccountTheme),
-          }}
-        />
-        <ThemeController
-          defaultThemeMode={defaultThemeMode}
-          persistAccountTheme={persistAccountTheme}
-        />
-        {children}
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Script
+            id="theme-init"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{
+              __html: buildThemeInitScript(defaultThemeMode, persistAccountTheme),
+            }}
+          />
+          <ThemeController
+            defaultThemeMode={defaultThemeMode}
+            persistAccountTheme={persistAccountTheme}
+          />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

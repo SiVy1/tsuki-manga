@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -26,6 +27,9 @@ export function CommentItem({
   comment,
   depth = 0,
 }: CommentItemProps) {
+  const t = useTranslations("Comments.item");
+  const commentsT = useTranslations("Comments");
+  const common = useTranslations("Common");
   const router = useRouter();
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -64,11 +68,13 @@ export function CommentItem({
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="text-sm font-medium text-foreground">
-              {comment.author?.name ?? "Reader"}
+              {comment.author?.name ?? common("entities.reader")}
             </p>
             <p className="text-xs text-muted">{comment.createdAtLabel}</p>
             {comment.isEdited && comment.editedAtLabel ? (
-              <p className="text-xs text-muted">Edited {comment.editedAtLabel}</p>
+              <p className="text-xs text-muted">
+                {t("edited", { date: comment.editedAtLabel })}
+              </p>
             ) : null}
           </div>
 
@@ -79,7 +85,7 @@ export function CommentItem({
               mode="edit"
               commentId={comment.id}
               initialBody={comment.body ?? ""}
-              submitLabel="Save"
+              submitLabel={t("save")}
               rows={4}
               onCancel={() => setIsEditing(false)}
               onSuccess={() => setIsEditing(false)}
@@ -103,7 +109,7 @@ export function CommentItem({
                   }}
                   className="text-muted transition hover:text-foreground"
                 >
-                  Reply
+                  {t("reply")}
                 </button>
               ) : null}
 
@@ -116,7 +122,7 @@ export function CommentItem({
                   }}
                   className="text-muted transition hover:text-foreground"
                 >
-                  Edit
+                  {t("edit")}
                 </button>
               ) : null}
 
@@ -127,7 +133,7 @@ export function CommentItem({
                   disabled={isDeleting}
                   className="text-muted transition hover:text-foreground disabled:opacity-60"
                 >
-                  {isDeleting ? "Deleting..." : "Delete"}
+                  {isDeleting ? common("status.deleting") : t("delete")}
                 </button>
               ) : null}
 
@@ -152,8 +158,8 @@ export function CommentItem({
                 chapterSlug={chapterSlug}
                 mode="reply"
                 parentId={comment.id}
-                submitLabel="Reply"
-                placeholder="Write a reply..."
+                submitLabel={t("reply")}
+                placeholder={commentsT("composer.replyPlaceholder")}
                 rows={3}
                 onCancel={() => setIsReplying(false)}
                 onSuccess={() => setIsReplying(false)}

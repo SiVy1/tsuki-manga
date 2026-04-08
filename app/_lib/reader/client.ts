@@ -52,10 +52,10 @@ export type HomeContinueReadingSnapshot = {
 };
 
 export const readingModes = [
-  { id: "WEBTOON", label: "Webtoon" },
-  { id: "VERTICAL", label: "Left to right" },
-  { id: "RIGHT_TO_LEFT", label: "Right to left" },
-] as const satisfies ReadonlyArray<{ id: ReaderMode; label: string }>;
+  "WEBTOON",
+  "VERTICAL",
+  "RIGHT_TO_LEFT",
+] as const satisfies ReadonlyArray<ReaderMode>;
 
 export const readerModeValues = [
   "WEBTOON",

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { HomeContinueReading } from "@/app/_components/home-continue-reading";
 import { HomeCoverCloud } from "@/app/_components/home-cover-cloud";
@@ -10,7 +11,13 @@ import { getHomePageData } from "@/app/_lib/reader/queries";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [data, siteContent] = await Promise.all([getHomePageData(), getSiteContent()]);
+  const [data, siteContent, t, common, entityT] = await Promise.all([
+    getHomePageData(),
+    getSiteContent(),
+    getTranslations("HomePage"),
+    getTranslations("Common.actions"),
+    getTranslations("Common.entities"),
+  ]);
   const heroCovers = Array.from(
     new Map(
       data.latestChapters
@@ -41,20 +48,20 @@ export default async function HomePage() {
           <p className="mx-auto max-w-2xl text-sm leading-8 text-muted md:text-base">
             {data.instanceSettings.groupDescription ??
               data.instanceSettings.siteDescription ??
-              "Reader-first releases from one scanlation group."}
+              t("heroFallback")}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
             <Link
               href="/series"
               className="rounded-full bg-foreground px-5 py-3 text-background transition hover:opacity-90"
             >
-              Browse series
+              {common("browseCatalog")}
             </Link>
             <Link
               href="#latest"
               className="rounded-full border border-border px-5 py-3 text-muted transition hover:border-foreground/20 hover:text-foreground"
             >
-              Latest updates
+              {t("latestUpdates")}
             </Link>
           </div>
         </div>
@@ -71,7 +78,9 @@ export default async function HomePage() {
         >
           <div className="flex flex-col gap-4 border-t border-border/70 py-5 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl space-y-2">
-              <p className="text-xs uppercase tracking-[0.22em] text-muted">Recruitment</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-muted">
+                {t("recruitment.eyebrow")}
+              </p>
               <h2 className="font-serif text-3xl md:text-[2.1rem]">
                 {siteContent.recruitment.title}
               </h2>
@@ -86,7 +95,7 @@ export default async function HomePage() {
               href="/recruitment"
               className="text-sm text-muted underline underline-offset-4 transition hover:text-foreground"
             >
-              View open roles
+              {t("recruitment.viewOpenRoles")}
             </Link>
           </div>
         </section>
@@ -100,12 +109,12 @@ export default async function HomePage() {
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
               <p className="text-xs uppercase tracking-[0.24em] text-muted">
-                Featured series
+                {t("featuredSeries")}
               </p>
-              <h2 className="font-serif text-3xl md:text-4xl">More to explore</h2>
+              <h2 className="font-serif text-3xl md:text-4xl">{t("moreToExplore")}</h2>
             </div>
             <Link href="/series" className="text-sm text-muted">
-              All series
+              {common("allSeries")}
             </Link>
           </div>
 
@@ -123,9 +132,9 @@ export default async function HomePage() {
         style={{ marginTop: "clamp(3.25rem, 6vw, 5.5rem)" }}
       >
         <div className="flex items-center justify-between gap-4">
-          <h2 className="font-serif text-3xl md:text-4xl">Latest updates</h2>
+          <h2 className="font-serif text-3xl md:text-4xl">{t("latestUpdates")}</h2>
           <Link href="/series" className="text-sm text-muted">
-            All series
+            {common("allSeries")}
           </Link>
         </div>
 
@@ -157,7 +166,7 @@ export default async function HomePage() {
                     {chapter.series.title}
                   </p>
                   <p className="font-serif text-2xl leading-tight">
-                    Chapter {chapter.number}
+                    {entityT("chapter")} {chapter.number}
                     {chapter.label ? ` ${chapter.label}` : ""}
                   </p>
                   {chapter.title ? (
@@ -169,7 +178,7 @@ export default async function HomePage() {
           </div>
         ) : (
           <div className="rounded-[1.6rem] bg-surface/70 px-6 py-10 text-sm text-muted">
-            No published chapters.
+            {t("emptyLatest")}
           </div>
         )}
       </section>

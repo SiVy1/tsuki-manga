@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { getSiteContent } from "@/app/_lib/content/site-content";
 import { buildAbsoluteUrl } from "@/app/_lib/seo/public-url";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("RulesPage");
   const canonicalUrl = await buildAbsoluteUrl("rules");
 
   return {
-    title: "Community rules",
+    title: t("metadataTitle"),
     alternates: {
       canonical: canonicalUrl,
     },
@@ -15,16 +17,19 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RulesPage() {
-  const content = await getSiteContent();
+  const [content, t] = await Promise.all([
+    getSiteContent(),
+    getTranslations("RulesPage"),
+  ]);
 
   return (
     <main className="shell flex-1 py-10 md:py-14">
       <section className="max-w-3xl space-y-8">
         <header className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.24em] text-muted">Public info</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-muted">{t("eyebrow")}</p>
           <h1 className="font-serif text-4xl md:text-5xl">{content.rules.title}</h1>
           {content.rules.updatedAt ? (
-            <p className="text-sm text-muted">Updated {content.rules.updatedAt}</p>
+            <p className="text-sm text-muted">{t("updatedAt", { date: content.rules.updatedAt })}</p>
           ) : null}
         </header>
 
@@ -44,7 +49,7 @@ export default async function RulesPage() {
           </ol>
         ) : (
           <p className="text-sm leading-7 text-muted">
-            No public rules have been published for this instance yet.
+            {t("empty")}
           </p>
         )}
       </section>

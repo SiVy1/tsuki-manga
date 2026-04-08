@@ -1,18 +1,19 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { reportCommentAction } from "@/app/_actions/comments/actions";
 
 const reportReasonOptions = [
-  { value: "SPAM", label: "Spam" },
-  { value: "HARASSMENT", label: "Harassment" },
-  { value: "HATE", label: "Hate" },
-  { value: "SEXUAL_CONTENT", label: "Sexual content" },
-  { value: "VIOLENCE", label: "Violence" },
-  { value: "MISINFORMATION", label: "Misinformation" },
-  { value: "OTHER", label: "Other" },
+  { value: "SPAM" },
+  { value: "HARASSMENT" },
+  { value: "HATE" },
+  { value: "SEXUAL_CONTENT" },
+  { value: "VIOLENCE" },
+  { value: "MISINFORMATION" },
+  { value: "OTHER" },
 ] as const;
 
 type CommentReportButtonProps = {
@@ -26,6 +27,8 @@ export function CommentReportButton({
   chapterSlug,
   commentId,
 }: CommentReportButtonProps) {
+  const t = useTranslations("Comments.report");
+  const commonActions = useTranslations("Common.actions");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
@@ -51,7 +54,7 @@ export function CommentReportButton({
       }
 
       setError(null);
-      setNotice("Report sent.");
+      setNotice(t("sent"));
       setDetails("");
       setIsOpen(false);
       router.refresh();
@@ -69,13 +72,13 @@ export function CommentReportButton({
         }}
         className="text-xs text-muted transition hover:text-foreground"
       >
-        Report
+        {t("button")}
       </button>
 
       {isOpen ? (
         <div className="space-y-3 rounded-[1.2rem] border border-border px-4 py-3">
           <label className="block space-y-1.5">
-            <span className="text-xs uppercase tracking-[0.16em] text-muted">Reason</span>
+            <span className="text-xs uppercase tracking-[0.16em] text-muted">{t("reason")}</span>
             <select
               value={reason}
               onChange={(event) =>
@@ -85,19 +88,19 @@ export function CommentReportButton({
             >
               {reportReasonOptions.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(`reasons.${option.value}`)}
                 </option>
               ))}
             </select>
           </label>
 
           <label className="block space-y-1.5">
-            <span className="text-xs uppercase tracking-[0.16em] text-muted">Details</span>
+            <span className="text-xs uppercase tracking-[0.16em] text-muted">{t("details")}</span>
             <textarea
               value={details}
               onChange={(event) => setDetails(event.target.value)}
               rows={3}
-              placeholder="Add a short note if needed."
+              placeholder={t("detailsPlaceholder")}
               className="w-full rounded-2xl border border-border bg-transparent px-3 py-2 text-sm outline-none transition focus:border-foreground/25"
             />
           </label>
@@ -112,7 +115,7 @@ export function CommentReportButton({
               disabled={isPending}
               className="inline-flex items-center justify-center rounded-full border border-border px-3 py-1.5 text-sm text-foreground transition hover:border-foreground/20 disabled:opacity-60"
             >
-              {isPending ? "Sending..." : "Send report"}
+              {isPending ? t("pending") : t("send")}
             </button>
             <button
               type="button"
@@ -120,7 +123,7 @@ export function CommentReportButton({
               disabled={isPending}
               className="text-sm text-muted transition hover:text-foreground disabled:opacity-60"
             >
-              Cancel
+              {commonActions("cancel")}
             </button>
           </div>
         </div>

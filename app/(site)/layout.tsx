@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import Script from "next/script";
 
 import { signOut } from "@/app/_lib/auth";
 import { saveThemePreferenceAction } from "@/app/_actions/preferences/actions";
 import { getOptionalSession } from "@/app/_lib/auth/session";
 import { canAccessDashboard } from "@/app/_lib/permissions/bits";
+import { LocaleToggle } from "@/app/_components/locale-toggle";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
 import { getSiteContent } from "@/app/_lib/content/site-content";
 import { getEnv } from "@/app/_lib/settings/env";
@@ -26,9 +28,12 @@ export default async function SiteLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [session, instanceSettings] = await Promise.all([
+  const [session, instanceSettings, t, common, commonStatus] = await Promise.all([
     getOptionalSession(),
     getInstanceSettings(),
+    getTranslations("SiteLayout"),
+    getTranslations("Common.actions"),
+    getTranslations("Common.status"),
   ]);
   const siteContent = await getSiteContent();
   const dashboardVisible = session?.user
@@ -80,7 +85,7 @@ export default async function SiteLayout({
             )}
             <div className="min-w-0 space-y-1">
               <p className="text-[0.64rem] uppercase tracking-[0.22em] text-muted">
-                Scanlation group
+                {t("groupLabel")}
               </p>
               <p className="truncate font-serif text-[1.7rem] leading-none md:text-[1.85rem]">
                 {instanceSettings.groupName}
@@ -93,21 +98,21 @@ export default async function SiteLayout({
               href="/series"
               className="transition hover:text-foreground"
             >
-              Series
+              {common("series")}
             </Link>
             {siteContent.recruitment.enabled ? (
               <Link href="/recruitment" className="transition hover:text-foreground">
-                Recruitment
+                {common("recruitment")}
               </Link>
             ) : null}
             {siteContent.rules.enabled ? (
               <Link href="/rules" className="transition hover:text-foreground">
-                Rules
+                {common("rules")}
               </Link>
             ) : null}
             {session?.user ? (
               <Link href="/library" className="transition hover:text-foreground">
-                Library
+                {common("library")}
               </Link>
             ) : null}
             {dashboardVisible ? (
@@ -115,20 +120,21 @@ export default async function SiteLayout({
                 href="/dashboard"
                 className="transition hover:text-foreground"
               >
-                Dashboard
+                {common("dashboard")}
               </Link>
             ) : null}
             <ThemeToggle
               defaultThemeMode={defaultThemeMode}
               onPersistThemeMode={session?.user ? saveThemePreferenceAction : undefined}
             />
+            <LocaleToggle />
             {session?.user ? (
               <form action={signOutAction}>
                 <SubmitButton
-                  pendingLabel="Signing out..."
+                  pendingLabel={commonStatus("signingOut")}
                   className="inline-flex items-center justify-center text-sm text-foreground transition hover:opacity-70 disabled:cursor-wait disabled:opacity-70"
                 >
-                  Sign out
+                  {common("signOut")}
                 </SubmitButton>
               </form>
             ) : (
@@ -136,7 +142,7 @@ export default async function SiteLayout({
                 href="/sign-in"
                 className="text-foreground transition hover:opacity-70"
               >
-                Sign in
+                {common("signIn")}
               </Link>
             )}
           </nav>
@@ -149,7 +155,7 @@ export default async function SiteLayout({
         <div className="shell flex flex-col gap-8 py-10 md:flex-row md:items-end md:justify-between md:py-12">
           <div className="max-w-xl space-y-3">
             <p className="text-[0.68rem] uppercase tracking-[0.24em] text-muted">
-              Published by
+              {t("publishedBy")}
             </p>
             <div className="space-y-2">
               <p className="font-serif text-3xl">{instanceSettings.groupName}</p>
@@ -160,24 +166,24 @@ export default async function SiteLayout({
           <div className="space-y-4 md:text-right">
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted md:justify-end">
               <Link href="/series" className="transition hover:text-foreground">
-                Series
+                {common("series")}
               </Link>
               {siteContent.recruitment.enabled ? (
                 <Link href="/recruitment" className="transition hover:text-foreground">
-                  Recruitment
+                  {common("recruitment")}
                 </Link>
               ) : null}
               {siteContent.rules.enabled ? (
                 <Link href="/rules" className="transition hover:text-foreground">
-                  Rules
+                  {common("rules")}
                 </Link>
               ) : null}
               <Link href="/feed.xml" className="transition hover:text-foreground">
-                RSS feed
+                {common("rssFeed")}
               </Link>
               {!session?.user ? (
                 <Link href="/sign-in" className="transition hover:text-foreground">
-                  Sign in
+                  {common("signIn")}
                 </Link>
               ) : null}
             </div>

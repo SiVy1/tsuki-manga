@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useDeferredValue, useState } from "react";
 
 import {
@@ -17,6 +18,7 @@ type SeriesCatalogBrowserProps = {
 };
 
 export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
+  const t = useTranslations("SeriesCatalog");
   const [query, setQuery] = useState("");
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [activeTerm, setActiveTerm] = useState<string | null>(null);
@@ -46,10 +48,10 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <input
-            aria-label="Search series"
+            aria-label={t("searchAriaLabel")}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search"
+            placeholder={t("searchPlaceholder")}
             className="min-w-[220px] flex-1 rounded-full border border-border bg-surface px-5 py-3 text-sm outline-none transition focus:border-foreground/25"
           />
           <button
@@ -58,7 +60,7 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
             aria-expanded={filtersVisible}
             className="rounded-full border border-border px-4 py-3 text-sm text-muted transition hover:border-foreground/20 hover:text-foreground"
           >
-            {filtersVisible ? "Hide filters" : "Filters"}
+            {filtersVisible ? t("hideFilters") : t("filters")}
           </button>
         </div>
 
@@ -80,7 +82,7 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
                 onClick={() => setQuery("")}
                 className="rounded-full border border-border/80 px-3 py-2 text-[11px] uppercase tracking-[0.14em] text-muted transition hover:border-foreground/20 hover:text-foreground"
               >
-                Search: {query.trim()}
+                {t("searchChip", { query: query.trim() })}
               </button>
             ) : null}
 
@@ -92,7 +94,7 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
               }}
               className="px-1 py-2 text-[11px] uppercase tracking-[0.18em] text-muted transition hover:text-foreground"
             >
-              Clear
+              {t("clear")}
             </button>
           </div>
         ) : null}
@@ -100,7 +102,7 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
 
       {filtersVisible ? (
         <div className="space-y-3">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-muted">Browse by tag</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-muted">{t("browseByTag")}</p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -111,7 +113,7 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
                   : "border-border text-muted hover:border-foreground/20 hover:text-foreground"
               }`}
             >
-              All
+              {t("all")}
             </button>
             {availableTerms.map((term) => (
               <button
@@ -133,9 +135,9 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
 
       <div className="flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.18em] text-muted">
         <p>
-          {visibleSeries.length} of {series.length} series
+          {t("resultsCount", { visible: visibleSeries.length, total: series.length })}
         </p>
-        {hasActiveFilter || hasQuery ? <p>Filtered</p> : null}
+        {hasActiveFilter || hasQuery ? <p>{t("filtered")}</p> : null}
       </div>
 
       <section className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 xl:grid-cols-5">
@@ -147,9 +149,9 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
       {visibleSeries.length === 0 ? (
         <div className="space-y-4">
           <div className="space-y-1">
-            <p className="font-serif text-2xl">No matching series</p>
+            <p className="font-serif text-2xl">{t("emptyTitle")}</p>
             <p className="text-sm text-muted">
-              Try another search or clear the current filter to browse the full catalog.
+              {t("emptyDescription")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -159,7 +161,7 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
                 onClick={() => setQuery("")}
                 className="rounded-full border border-border px-4 py-3 text-sm text-muted transition hover:border-foreground/20 hover:text-foreground"
               >
-                Clear search
+                {t("clearSearch")}
               </button>
             ) : null}
             {hasActiveFilter ? (
@@ -168,7 +170,7 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
                 onClick={() => setActiveTerm(null)}
                 className="rounded-full border border-border px-4 py-3 text-sm text-muted transition hover:border-foreground/20 hover:text-foreground"
               >
-                Clear filter
+                {t("clearFilter")}
               </button>
             ) : null}
             {hasQuery || hasActiveFilter ? (
@@ -180,7 +182,7 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
                 }}
                 className="rounded-full bg-foreground px-4 py-3 text-sm text-background transition hover:opacity-90"
               >
-                Reset catalog
+                {t("resetCatalog")}
               </button>
             ) : null}
           </div>

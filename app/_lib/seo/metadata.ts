@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { getInstanceSettings } from "@/app/_lib/settings/instance";
 import { buildAbsoluteUrl, getDefaultOgImageUrl } from "@/app/_lib/seo/public-url";
@@ -108,15 +109,19 @@ export async function buildChapterMetadata(chapter: {
     title: string;
   };
 }) {
-  const [instanceSettings, canonicalUrl, defaultOgImageUrl] = await Promise.all([
+  const [instanceSettings, canonicalUrl, defaultOgImageUrl, t] = await Promise.all([
     getInstanceSettings(),
     buildAbsoluteUrl(`chapter/${chapter.id}/${chapter.slug}`),
     getDefaultOgImageUrl(),
+    getTranslations("ChapterPage"),
   ]);
 
   const chapterLabel = chapter.title
     ? chapter.title
-    : `Chapter ${chapter.number}${chapter.label ? ` ${chapter.label}` : ""}`;
+    : t("chapterTitle", {
+        number: chapter.number,
+        label: chapter.label ? ` ${chapter.label}` : "",
+      });
   const description = `${chapter.series.title} - ${chapterLabel}`;
 
   return {

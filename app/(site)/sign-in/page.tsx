@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 
@@ -24,20 +25,27 @@ function resolveRedirectTarget(rawRedirect: string | undefined) {
   return rawRedirect;
 }
 
-function mapAuthError(error: unknown) {
+function mapAuthError(error: unknown, t: Awaited<ReturnType<typeof getTranslations>>) {
   if (error instanceof AuthError) {
-    return "Sign in failed. Check the credentials or enabled provider.";
+    return t("authError");
   }
 
   if (error instanceof Error) {
     return error.message;
   }
 
-  return "Sign in failed.";
+  return t("signInFailed");
 }
 
 export default async function SignInPage({ searchParams }: PageProps) {
-  const [session, params] = await Promise.all([getOptionalSession(), searchParams]);
+  const [session, params, t, common, commonStatus, commonEntities] = await Promise.all([
+    getOptionalSession(),
+    searchParams,
+    getTranslations("SignInPage"),
+    getTranslations("Common.actions"),
+    getTranslations("Common.status"),
+    getTranslations("Common.entities"),
+  ]);
   const redirectTo = resolveRedirectTarget(params.redirectTo);
   const env = getEnv();
   const allowTestAuthAccountSwitch = isTestAuthEnabled(env);
@@ -75,7 +83,8 @@ export default async function SignInPage({ searchParams }: PageProps) {
       });
     } catch (error) {
       if (error instanceof AuthError) {
-        const message = encodeURIComponent(mapAuthError(error));
+        const signInTranslations = await getTranslations("SignInPage");
+        const message = encodeURIComponent(mapAuthError(error, signInTranslations));
         redirect(`/sign-in?redirectTo=${encodeURIComponent(target)}&error=${message}`);
       }
 
@@ -96,21 +105,21 @@ export default async function SignInPage({ searchParams }: PageProps) {
       <section className="grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.75fr)]">
         <div className="space-y-6">
           <p className="text-xs uppercase tracking-[0.28em] text-muted">
-            Public sign in
+            {t("eyebrow")}
           </p>
-          <h1 className="max-w-2xl font-serif text-5xl leading-tight">Sign in</h1>
+          <h1 className="max-w-2xl font-serif text-5xl leading-tight">{t("title")}</h1>
           <div className="flex flex-wrap gap-3 text-sm">
             <Link
               href="/"
               className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/20 hover:text-foreground"
             >
-              Back home
+              {common("backHome")}
             </Link>
             <Link
               href="/series"
               className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/20 hover:text-foreground"
             >
-              Browse catalog
+              {common("browseCatalog")}
             </Link>
           </div>
         </div>
@@ -118,9 +127,9 @@ export default async function SignInPage({ searchParams }: PageProps) {
         <section className="panel space-y-6 p-6">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.24em] text-muted">
-              Access
+              {t("accessEyebrow")}
             </p>
-            <h2 className="font-serif text-3xl">Sign in to Tsuki Manga</h2>
+            <h2 className="font-serif text-3xl">{t("panelTitle")}</h2>
           </div>
 
           {params.error ? (
@@ -133,11 +142,15 @@ export default async function SignInPage({ searchParams }: PageProps) {
             <div className="space-y-4 rounded-2xl border border-border bg-[var(--surface-muted)] px-4 py-4 text-sm">
               <div className="space-y-1">
                 <p className="font-medium">
-                  Signed in as {session.user.displayName ?? session.user.name ?? "current user"}
+                  {t("signedInAs", {
+                    name:
+                      session.user.displayName ??
+                      session.user.name ??
+                      commonEntities("currentUser"),
+                  })}
                 </p>
                 <p className="text-muted">
-                  Test auth is enabled. You can switch to another seeded account below without
-                  touching your local database on port 5432.
+                  {t("testAuthDescription")}
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -146,15 +159,15 @@ export default async function SignInPage({ searchParams }: PageProps) {
                   className="rounded-full border border-border px-4 py-2 text-muted transition hover:border-foreground/20 hover:text-foreground"
                 >
                   {canAccessDashboard(session.user.permissionBits)
-                    ? "Open dashboard"
-                    : "Return home"}
+                    ? common("openDashboard")
+                    : common("returnHome")}
                 </Link>
                 <form action={signOutAction}>
                   <SubmitButton
-                    pendingLabel="Signing out..."
+                    pendingLabel={commonStatus("signingOut")}
                     className="inline-flex items-center justify-center rounded-full border border-foreground px-4 py-2 text-sm text-foreground transition hover:bg-foreground hover:text-background disabled:cursor-wait disabled:opacity-70"
                   >
-                    Sign out first
+                    {t("signOutFirst")}
                   </SubmitButton>
                 </form>
               </div>
@@ -163,11 +176,13 @@ export default async function SignInPage({ searchParams }: PageProps) {
 
           {env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET ? (
             <form action={signInWithDiscord}>
-              <SubmitButton pendingLabel="Redirecting...">Continue with Discord</SubmitButton>
+              <SubmitButton pendingLabel={commonStatus("redirecting")}>
+                {t("continueWithDiscord")}
+              </SubmitButton>
             </form>
           ) : (
             <div className="rounded-2xl border border-dashed border-border px-4 py-4 text-sm text-muted">
-              Discord OAuth is not configured in this environment.
+              {t("discordNotConfigured")}
             </div>
           )}
 
@@ -176,7 +191,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
               <input type="hidden" name="redirectTo" value={redirectTo} />
               <div className="space-y-1">
                 <label htmlFor="providerAccountId" className="text-sm font-medium">
-                  Provider account ID
+                  {t("testAuth.providerAccountId")}
                 </label>
                 <input
                   id="providerAccountId"
@@ -187,7 +202,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
               </div>
               <div className="space-y-1">
                 <label htmlFor="displayName" className="text-sm font-medium">
-                  Display name
+                  {t("testAuth.displayName")}
                 </label>
                 <input
                   id="displayName"
@@ -198,7 +213,7 @@ export default async function SignInPage({ searchParams }: PageProps) {
               </div>
               <div className="space-y-1">
                 <label htmlFor="sharedSecret" className="text-sm font-medium">
-                  Shared secret
+                  {t("testAuth.sharedSecret")}
                 </label>
                 <input
                   id="sharedSecret"
@@ -207,7 +222,9 @@ export default async function SignInPage({ searchParams }: PageProps) {
                   className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
                 />
               </div>
-              <SubmitButton pendingLabel="Signing in...">Continue with test auth</SubmitButton>
+              <SubmitButton pendingLabel={commonStatus("signingIn")}>
+                {t("continueWithTestAuth")}
+              </SubmitButton>
             </form>
           ) : null}
         </section>

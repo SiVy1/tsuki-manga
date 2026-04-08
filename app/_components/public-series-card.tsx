@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export type PublicSeriesCardData = {
   id: string;
@@ -19,6 +20,8 @@ type PublicSeriesCardProps = {
 };
 
 export function PublicSeriesCard({ series }: PublicSeriesCardProps) {
+  const t = useTranslations("SeriesCard");
+
   return (
     <Link href={`/series/${series.slug}`} className="space-y-3">
       {series.coverUrl ? (
@@ -39,11 +42,13 @@ export function PublicSeriesCard({ series }: PublicSeriesCardProps) {
         <h2 className="font-serif text-2xl leading-tight">{series.title}</h2>
         {series.latestChapter ? (
           <p className="text-xs uppercase tracking-[0.14em] text-muted">
-            Chapter {series.latestChapter.number}
-            {series.latestChapter.label ? ` ${series.latestChapter.label}` : ""}
+            {t("latestChapter", {
+              number: series.latestChapter.number,
+              label: series.latestChapter.label ? ` ${series.latestChapter.label}` : "",
+            })}
           </p>
         ) : (
-          <p className="text-xs uppercase tracking-[0.14em] text-muted">No chapters</p>
+          <p className="text-xs uppercase tracking-[0.14em] text-muted">{t("noChapters")}</p>
         )}
       </div>
     </Link>

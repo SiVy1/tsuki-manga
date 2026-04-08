@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useSyncExternalStore, useTransition } from "react";
 
 import {
@@ -25,6 +26,7 @@ export function SeriesSaveButton({
   initialSaved,
   signedIn,
 }: SeriesSaveButtonProps) {
+  const t = useTranslations("SeriesSave");
   const [serverSaved, setServerSaved] = useState(initialSaved);
   const [isPending, startTransition] = useTransition();
   const anonymousSaved = useSyncExternalStore(
@@ -81,7 +83,7 @@ export function SeriesSaveButton({
       >
         <path d="M4 2.5h8a1 1 0 0 1 1 1V14l-5-2.9L3 14V3.5a1 1 0 0 1 1-1Z" />
       </svg>
-      {saved ? "Saved" : "Save series"}
+      {saved ? t("saved") : t("saveSeries")}
     </button>
   );
 }

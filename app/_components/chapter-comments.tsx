@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { CommentComposer } from "@/app/_components/comment-composer";
 import { CommentThreadList } from "@/app/_components/comment-thread-list";
@@ -14,7 +15,11 @@ export async function ChapterComments({
   chapterId,
   chapterSlug,
 }: ChapterCommentsProps) {
-  const session = await getOptionalSession();
+  const [session, t, common] = await Promise.all([
+    getOptionalSession(),
+    getTranslations("Comments"),
+    getTranslations("Common.actions"),
+  ]);
   const discussion = await getChapterDiscussionData(
     chapterId,
     chapterSlug,
@@ -29,15 +34,15 @@ export async function ChapterComments({
       <div className="space-y-2.5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted">Discussion</p>
-            <h2 className="font-serif text-3xl sm:text-4xl">Discussion</h2>
+            <p className="text-xs uppercase tracking-[0.24em] text-muted">{t("sectionEyebrow")}</p>
+            <h2 className="font-serif text-3xl sm:text-4xl">{t("sectionTitle")}</h2>
           </div>
           <p className="text-sm text-muted">
-            {discussion.totalCount} comment{discussion.totalCount === 1 ? "" : "s"}
+            {t("count", { count: discussion.totalCount })}
           </p>
         </div>
         <p className="max-w-2xl text-sm leading-6 text-muted">
-          Keep it short, readable, and close to the chapter.
+          {t("sectionDescription")}
         </p>
       </div>
 
@@ -47,23 +52,23 @@ export async function ChapterComments({
             chapterId={chapterId}
             chapterSlug={chapterSlug}
             mode="create"
-            submitLabel="Post comment"
-            placeholder="Add a comment about this chapter..."
+            submitLabel={t("postComment")}
+            placeholder={t("composer.createPlaceholder")}
           />
         </div>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] bg-[var(--surface-muted)] px-5 py-4">
           <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">Sign in to join the discussion</p>
+            <p className="text-sm font-medium text-foreground">{t("signInPromptTitle")}</p>
             <p className="text-sm text-muted">
-              You can read comments without an account, but posting and reporting require sign in.
+              {t("signInPromptDescription")}
             </p>
           </div>
           <Link
             href={signInRedirect}
             className="inline-flex min-h-11 items-center rounded-full border border-border px-4 py-2 text-sm text-foreground transition hover:border-foreground/20"
           >
-            Sign in
+            {common("signIn")}
           </Link>
         </div>
       )}
@@ -76,11 +81,11 @@ export async function ChapterComments({
         />
       ) : (
         <div className="space-y-2 border-t border-border/70 py-6">
-          <p className="font-medium text-foreground">No discussion yet.</p>
+          <p className="font-medium text-foreground">{t("emptyTitle")}</p>
           <p className="text-sm text-muted">
             {discussion.viewer.isSignedIn
-              ? "Start the first thread for this chapter."
-              : "Sign in to leave the first comment for this chapter."}
+              ? t("emptySignedIn")
+              : t("emptySignedOut")}
           </p>
         </div>
       )}

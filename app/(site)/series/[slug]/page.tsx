@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { SeriesSaveButton } from "@/app/_components/series-save-button";
@@ -33,9 +34,12 @@ export async function generateMetadata({
 
 export default async function SeriesPage({ params }: PageProps) {
   const { slug } = await params;
-  const [result, session] = await Promise.all([
+  const [result, session, t, common, entityT] = await Promise.all([
     getPublicSeriesOrThrow(slug),
     getOptionalSession(),
+    getTranslations("SeriesPage"),
+    getTranslations("Common.actions"),
+    getTranslations("Common.entities"),
   ]);
 
   if (result.kind === "redirect") {
@@ -78,7 +82,7 @@ export default async function SeriesPage({ params }: PageProps) {
           <div className="space-y-3 sm:space-y-3.5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2.5 sm:space-y-3">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted">Series</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-muted">{t("eyebrow")}</p>
                 <h1 className="font-serif text-5xl leading-tight">{result.series.title}</h1>
               </div>
 
@@ -115,7 +119,7 @@ export default async function SeriesPage({ params }: PageProps) {
       </section>
 
       <section className="space-y-5">
-        <h2 className="font-serif text-3xl">Chapters</h2>
+        <h2 className="font-serif text-3xl">{t("chaptersTitle")}</h2>
         <div className="panel divide-y divide-border">
           {result.series.chapters.length ? (
             result.series.chapters.map((chapter) => (
@@ -126,7 +130,7 @@ export default async function SeriesPage({ params }: PageProps) {
               >
                 <div>
                   <p className="font-medium">
-                    Chapter {chapter.number}
+                    {entityT("chapter")} {chapter.number}
                     {chapter.label ? ` ${chapter.label}` : ""}
                   </p>
                   {chapter.title ? (
@@ -134,12 +138,12 @@ export default async function SeriesPage({ params }: PageProps) {
                   ) : null}
                 </div>
                 <span className="text-xs uppercase tracking-[0.16em] text-muted">
-                  Read
+                  {common("read")}
                 </span>
               </Link>
             ))
           ) : (
-            <div className="px-5 py-8 text-sm text-muted">No published chapters.</div>
+            <div className="px-5 py-8 text-sm text-muted">{t("emptyChapters")}</div>
           )}
         </div>
       </section>

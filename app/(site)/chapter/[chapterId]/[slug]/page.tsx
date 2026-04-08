@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { ReadingMode } from "@/generated/prisma/client";
@@ -22,15 +23,18 @@ type PageProps = {
   }>;
 };
 
-function formatChapterLabel(input: {
+function formatChapterLabel(
+  t: Awaited<ReturnType<typeof getTranslations<"ChapterPage">>>,
+  input: {
   number: string;
   label?: string | null;
   title?: string | null;
-}) {
+},
+) {
   const suffix = input.label ? ` ${input.label}` : "";
-  const title = input.title ? ` - ${input.title}` : "";
-
-  return `Chapter ${input.number}${suffix}${title}`;
+  return input.title
+    ? t("chapterTitleWithName", { number: input.number, label: suffix, title: input.title })
+    : t("chapterTitle", { number: input.number, label: suffix });
 }
 
 export async function generateMetadata({
@@ -50,6 +54,8 @@ function ChapterNavigation({
   previous,
   next,
   series,
+  t,
+  common,
   nextPrefetchStrategy = "none",
 }: {
   previous: {
@@ -67,11 +73,13 @@ function ChapterNavigation({
   series: {
     slug: string;
   };
+  t: Awaited<ReturnType<typeof getTranslations<"ChapterPage">>>;
+  common: Awaited<ReturnType<typeof getTranslations<"Common.actions">>>;
   nextPrefetchStrategy?: "none" | "intent" | "visible";
 }) {
   return (
     <nav
-      aria-label="Chapter navigation"
+      aria-label={t("navigationAria")}
       className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-y border-border/60 py-2.5 text-[13px] sm:gap-x-5 sm:gap-y-2 sm:py-3 sm:text-sm"
     >
       {previous ? (
@@ -82,14 +90,14 @@ function ChapterNavigation({
           <span aria-hidden="true" className="mr-2">
             {"<-"}
           </span>
-          Previous chapter
+          {common("previousChapter")}
         </Link>
       ) : null}
       <Link
         href={`/series/${series.slug}`}
         className="inline-flex min-h-11 items-center text-foreground transition hover:text-muted"
       >
-        Series
+        {common("series")}
       </Link>
       {next ? (
         nextPrefetchStrategy === "none" ? (
@@ -97,7 +105,7 @@ function ChapterNavigation({
             href={`/chapter/${next.id}/${next.slug}`}
             className="inline-flex min-h-11 items-center text-muted transition hover:text-foreground"
           >
-            Next chapter
+            {common("nextChapter")}
             <span aria-hidden="true" className="ml-2">
               {"->"}
             </span>
@@ -108,7 +116,7 @@ function ChapterNavigation({
             prefetchStrategy={nextPrefetchStrategy}
             className="inline-flex min-h-11 items-center text-muted transition hover:text-foreground"
           >
-            Next chapter
+            {common("nextChapter")}
             <span aria-hidden="true" className="ml-2">
               {"->"}
             </span>
@@ -122,6 +130,8 @@ function ChapterNavigation({
 function ChapterContinuation({
   next,
   series,
+  t,
+  common,
 }: {
   next: {
     id: string;
@@ -134,26 +144,28 @@ function ChapterContinuation({
     slug: string;
     title: string;
   };
+  t: Awaited<ReturnType<typeof getTranslations<"ChapterPage">>>;
+  common: Awaited<ReturnType<typeof getTranslations<"Common.actions">>>;
 }) {
   return (
     <section className="mx-auto max-w-3xl space-y-4 border-t border-border/60 pt-10 sm:space-y-5 sm:pt-12">
       <div className="space-y-2.5 sm:space-y-3">
         <p className="text-xs uppercase tracking-[0.24em] text-muted">
-          End of chapter
+          {t("endEyebrow")}
         </p>
         <h2 className="font-serif text-2xl sm:text-3xl">
           {next
-            ? formatChapterLabel({
+            ? formatChapterLabel(t, {
                 number: next.number,
                 label: next.label,
                 title: next.title,
               })
-            : "You reached the latest chapter"}
+            : t("latestReached")}
         </h2>
         <p className="max-w-2xl text-sm leading-6 text-muted sm:text-[15px]">
           {next
-            ? "Continue straight into the next published chapter."
-            : `There is no newer published chapter yet. You can return to ${series.title} and browse the full chapter list.`}
+            ? t("continueNext")
+            : t("continueNone", { seriesTitle: series.title })}
         </p>
       </div>
 
@@ -164,7 +176,7 @@ function ChapterContinuation({
             prefetchStrategy="visible"
             className="inline-flex min-h-11 items-center rounded-full bg-foreground px-4 py-2 text-background transition hover:opacity-90"
           >
-            Next chapter
+            {common("nextChapter")}
             <span aria-hidden="true" className="ml-2">
               {"->"}
             </span>
@@ -174,7 +186,7 @@ function ChapterContinuation({
           href={`/series/${series.slug}`}
           className="inline-flex min-h-11 items-center text-muted transition hover:text-foreground"
         >
-          Back to series
+          {common("backToSeries")}
         </Link>
       </div>
     </section>
@@ -183,9 +195,12 @@ function ChapterContinuation({
 
 export default async function ChapterPage({ params }: PageProps) {
   const { chapterId, slug } = await params;
-  const [result, session] = await Promise.all([
+  const [result, session, t, common, entityT] = await Promise.all([
     getPublicChapterOrThrow(chapterId, slug),
     getOptionalSession(),
+    getTranslations("ChapterPage"),
+    getTranslations("Common.actions"),
+    getTranslations("Common.entities"),
   ]);
 
   if (result.kind === "redirect") {
@@ -214,7 +229,7 @@ export default async function ChapterPage({ params }: PageProps) {
           {result.chapter.series.title}
         </Link>
         <h1 className="font-serif text-[1.85rem] leading-tight sm:text-4xl">
-          Chapter {result.chapter.number}
+          {entityT("chapter")} {result.chapter.number}
           {result.chapter.label ? ` ${result.chapter.label}` : ""}
         </h1>
         {result.chapter.title ? (
@@ -228,6 +243,8 @@ export default async function ChapterPage({ params }: PageProps) {
         previous={result.chapter.navigation.previous}
         next={result.chapter.navigation.next}
         series={result.chapter.series}
+        t={t}
+        common={common}
         nextPrefetchStrategy="none"
       />
 
@@ -252,6 +269,8 @@ export default async function ChapterPage({ params }: PageProps) {
       <ChapterContinuation
         next={result.chapter.navigation.next}
         series={result.chapter.series}
+        t={t}
+        common={common}
       />
 
       <ChapterComments
@@ -263,6 +282,8 @@ export default async function ChapterPage({ params }: PageProps) {
         previous={result.chapter.navigation.previous}
         next={result.chapter.navigation.next}
         series={result.chapter.series}
+        t={t}
+        common={common}
         nextPrefetchStrategy="intent"
       />
     </main>

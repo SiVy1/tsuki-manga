@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -31,15 +32,19 @@ export function CommentComposer({
   commentId,
   initialBody = "",
   submitLabel,
-  placeholder = "Write a comment...",
+  placeholder,
   rows = 4,
   onCancel,
   onSuccess,
 }: CommentComposerProps) {
+  const t = useTranslations("Comments");
+  const commonActions = useTranslations("Common.actions");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [body, setBody] = useState(initialBody);
   const [error, setError] = useState<string | null>(null);
+
+  const resolvedPlaceholder = placeholder ?? t("composer.placeholder");
 
   function handleSubmit() {
     const trimmedBody = body.trim();
@@ -95,7 +100,7 @@ export function CommentComposer({
             }
           }}
           rows={rows}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           className="min-h-28 w-full rounded-[1.4rem] border border-border bg-transparent px-4 py-3 text-sm leading-6 outline-none transition focus:border-foreground/25"
         />
       </label>
@@ -109,7 +114,7 @@ export function CommentComposer({
           disabled={isPending || body.trim().length === 0}
           className="inline-flex items-center justify-center rounded-full bg-foreground px-4 py-2 text-sm text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isPending ? "Saving..." : submitLabel}
+          {isPending ? t("composer.pending") : submitLabel}
         </button>
 
         {onCancel ? (
@@ -119,7 +124,7 @@ export function CommentComposer({
             disabled={isPending}
             className="text-sm text-muted transition hover:text-foreground disabled:opacity-60"
           >
-            Cancel
+            {commonActions("cancel")}
           </button>
         ) : null}
       </div>

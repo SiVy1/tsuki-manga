@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 import { isIP } from "node:net";
+import createNextIntlPlugin from "next-intl/plugin";
 
 import { buildSecurityHeaders } from "./app/_lib/security/headers";
+
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [];
 let useUnoptimizedImages = false;
@@ -74,4 +77,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

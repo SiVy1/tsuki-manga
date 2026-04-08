@@ -1,0 +1,267 @@
+{
+  "Common": {
+    "actions": {
+      "cancel": "Anuluj",
+      "save": "Zapisz",
+      "delete": "Usuń",
+      "edit": "Edytuj",
+      "reply": "Odpowiedz",
+      "report": "Zgłoś",
+      "signIn": "Zaloguj się",
+      "signOut": "Wyloguj się",
+      "dashboard": "Panel",
+      "backHome": "Wróć na stronę główną",
+      "browseCatalog": "Przeglądaj katalog",
+      "series": "Serie",
+      "library": "Biblioteka",
+      "recruitment": "Rekrutacja",
+      "rules": "Zasady",
+      "rssFeed": "Kanał RSS",
+      "openChapter": "Otwórz rozdział",
+      "openDashboard": "Otwórz panel",
+      "returnHome": "Wróć na stronę główną",
+      "allSeries": "Wszystkie serie",
+      "read": "Czytaj",
+      "continueReading": "Kontynuuj czytanie",
+      "openSeries": "Otwórz serię",
+      "clear": "Wyczyść",
+      "clearSearch": "Wyczyść wyszukiwanie",
+      "clearFilter": "Wyczyść filtr",
+      "resetCatalog": "Resetuj katalog",
+      "expand": "Rozwiń",
+      "collapse": "Zwiń",
+      "startOver": "Zacznij od początku",
+      "resume": "Wznów",
+      "nextChapter": "Następny rozdział",
+      "previousChapter": "Poprzedni rozdział",
+      "backToSeries": "Wróć do serii"
+    },
+    "status": {
+      "saving": "Zapisywanie...",
+      "signingIn": "Logowanie...",
+      "signingOut": "Wylogowywanie...",
+      "redirecting": "Przekierowywanie...",
+      "sending": "Wysyłanie...",
+      "hiding": "Ukrywanie...",
+      "removing": "Usuwanie...",
+      "resolving": "Rozwiązywanie...",
+      "rejecting": "Odrzucanie...",
+      "deleting": "Usuwanie..."
+    },
+    "entities": {
+      "reader": "Czytelnik",
+      "currentUser": "obecne konto",
+      "chapter": "Rozdział"
+    },
+    "theme": {
+      "groupLabel": "Tryb motywu",
+      "system": "Systemowy",
+      "systemDescription": "Podążaj za motywem urządzenia",
+      "light": "Jasny",
+      "lightDescription": "Zachowaj spokojną, papierową paletę",
+      "dark": "Ciemny",
+      "darkDescription": "Użyj ciepłej, nocnej palety do czytania"
+    }
+  },
+  "LocaleToggle": {
+    "groupLabel": "Język",
+    "options": {
+      "en": "EN",
+      "pl": "PL"
+    }
+  },
+  "SiteLayout": {
+    "groupLabel": "Grupa skanlacyjna",
+    "publishedBy": "Publikowane przez"
+  },
+  "HomePage": {
+    "heroFallback": "Wydania nastawione na czytanie od jednej grupy skanlacyjnej.",
+    "latestUpdates": "Najnowsze aktualizacje",
+    "featuredSeries": "Wyróżnione serie",
+    "moreToExplore": "Więcej do odkrycia",
+    "recruitment": {
+      "eyebrow": "Rekrutacja",
+      "viewOpenRoles": "Zobacz otwarte role"
+    },
+    "emptyLatest": "Brak opublikowanych rozdziałów."
+  },
+  "SeriesCatalogPage": {
+    "eyebrow": "Serie",
+    "title": "Katalog"
+  },
+  "SeriesPage": {
+    "eyebrow": "Seria",
+    "chaptersTitle": "Rozdziały",
+    "emptyChapters": "Brak opublikowanych rozdziałów."
+  },
+  "SeriesCard": {
+    "latestChapter": "Rozdział {number}{label}",
+    "noChapters": "Brak rozdziałów"
+  },
+  "SeriesCatalog": {
+    "searchAriaLabel": "Szukaj serii",
+    "searchPlaceholder": "Szukaj",
+    "filters": "Filtry",
+    "hideFilters": "Ukryj filtry",
+    "clear": "Wyczyść",
+    "searchChip": "Szukaj: {query}",
+    "browseByTag": "Przeglądaj po tagu",
+    "all": "Wszystkie",
+    "resultsCount": "{visible} z {total} serii",
+    "filtered": "Przefiltrowane",
+    "emptyTitle": "Brak pasujących serii",
+    "emptyDescription": "Spróbuj innego wyszukiwania albo wyczyść obecny filtr, aby przeglądać cały katalog.",
+    "clearSearch": "Wyczyść wyszukiwanie",
+    "clearFilter": "Wyczyść filtr",
+    "resetCatalog": "Resetuj katalog"
+  },
+  "SeriesSave": {
+    "saved": "Zapisano",
+    "saveSeries": "Zapisz serię"
+  },
+  "SeriesLongDescription": {
+    "expand": "Rozwiń",
+    "collapse": "Zwiń"
+  },
+  "LibraryPage": {
+    "eyebrow": "Biblioteka",
+    "title": "Zapisane serie",
+    "description": "Zapisane serie do szybkiego powrotu.",
+    "emptyTitle": "Nic jeszcze nie zapisano",
+    "emptyDescription": "Zapisz serię, aby mieć ją pod ręką i łatwo do niej wracać."
+  },
+  "ContinueReading": {
+    "eyebrow": "Kontynuuj czytanie",
+    "fallbackTitle": "Kontynuuj tam, gdzie skończyłeś",
+    "chapterLabel": "Rozdział {number}{label}"
+  },
+  "RecruitmentPage": {
+    "metadataTitle": "Rekrutacja",
+    "eyebrow": "Dołącz do zespołu",
+    "fallbackSummary": "Brak publicznego ogłoszenia rekrutacyjnego dla tej instancji.",
+    "closed": "Rekrutacja jest obecnie zamknięta dla tej instancji.",
+    "contactEyebrow": "Kontakt"
+  },
+  "RulesPage": {
+    "metadataTitle": "Zasady społeczności",
+    "eyebrow": "Informacje publiczne",
+    "updatedAt": "Aktualizacja: {date}",
+    "empty": "Ta instancja nie opublikowała jeszcze publicznych zasad."
+  },
+  "SignInPage": {
+    "eyebrow": "Logowanie publiczne",
+    "title": "Zaloguj się",
+    "accessEyebrow": "Dostęp",
+    "panelTitle": "Zaloguj się do Tsuki Manga",
+    "continueWithDiscord": "Kontynuuj przez Discord",
+    "discordNotConfigured": "OAuth Discord nie jest skonfigurowany w tym środowisku.",
+    "signInFailed": "Logowanie nie powiodło się.",
+    "authError": "Logowanie nie powiodło się. Sprawdź dane lub włączonego providera.",
+    "signedInAs": "Zalogowano jako {name}",
+    "testAuthDescription": "Testowe logowanie jest włączone. Możesz przełączyć się na inne przygotowane konto bez dotykania lokalnej bazy danych na porcie 5432.",
+    "signOutFirst": "Najpierw się wyloguj",
+    "continueWithTestAuth": "Kontynuuj przez test auth",
+    "testAuth": {
+      "providerAccountId": "ID konta providera",
+      "displayName": "Nazwa wyświetlana",
+      "sharedSecret": "Sekret współdzielony"
+    }
+  },
+  "ChapterPage": {
+    "chapterTitle": "Rozdział {number}{label}",
+    "chapterTitleWithName": "Rozdział {number}{label} - {title}",
+    "navigationAria": "Nawigacja rozdziału",
+    "endEyebrow": "Koniec rozdziału",
+    "latestReached": "Dotarłeś do najnowszego rozdziału",
+    "continueNext": "Przejdź od razu do następnego opublikowanego rozdziału.",
+    "continueNone": "Nie ma jeszcze nowszego opublikowanego rozdziału. Możesz wrócić do serii {seriesTitle} i przejrzeć pełną listę rozdziałów."
+  },
+  "Reader": {
+    "modeLabel": "Tryb czytania",
+    "savePreference": "Zapisywanie preferencji",
+    "resumeFromPage": "Wznów od strony {page}",
+    "resume": "Wznów",
+    "startOver": "Zacznij od początku",
+    "pageLabel": "Strona {current} z {total}",
+    "tapHelp": "Dotknij lewej strony, aby przejść dalej. Dotknij prawej, aby cofnąć.",
+    "fitLabel": "Dopasowanie strony",
+    "fitPage": "Dopasuj stronę",
+    "fitWidth": "Dopasuj szerokość",
+    "loadingPage": "Ładowanie strony",
+    "modes": {
+      "WEBTOON": "Webtoon",
+      "VERTICAL": "Od lewej do prawej",
+      "RIGHT_TO_LEFT": "Od prawej do lewej"
+    }
+  },
+  "Comments": {
+    "sectionEyebrow": "Dyskusja",
+    "sectionTitle": "Dyskusja",
+    "sectionDescription": "Pisz krótko, czytelnie i blisko samego rozdziału.",
+    "count": "{count, plural, one {# komentarz} few {# komentarze} many {# komentarzy} other {# komentarza}}",
+    "postComment": "Dodaj komentarz",
+    "signInPromptTitle": "Zaloguj się, aby dołączyć do dyskusji",
+    "signInPromptDescription": "Możesz czytać komentarze bez konta, ale dodawanie i zgłaszanie wymaga logowania.",
+    "emptyTitle": "Nie ma tu jeszcze dyskusji.",
+    "emptySignedIn": "Rozpocznij pierwszy wątek pod tym rozdziałem.",
+    "emptySignedOut": "Zaloguj się, aby dodać pierwszy komentarz pod tym rozdziałem.",
+    "composer": {
+      "placeholder": "Napisz komentarz...",
+      "createPlaceholder": "Dodaj komentarz do tego rozdziału...",
+      "replyPlaceholder": "Napisz odpowiedź...",
+      "pending": "Zapisywanie..."
+    },
+    "item": {
+      "edited": "Edytowano {date}",
+      "reply": "Odpowiedz",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "save": "Zapisz"
+    },
+    "placeholders": {
+      "deleted": "Komentarz usunięto.",
+      "hidden": "Komentarz ukryto przez moderację."
+    },
+    "report": {
+      "button": "Zgłoś",
+      "reason": "Powód",
+      "details": "Szczegóły",
+      "detailsPlaceholder": "Dodaj krótki opis, jeśli trzeba.",
+      "send": "Wyślij zgłoszenie",
+      "sent": "Zgłoszenie wysłane.",
+      "pending": "Wysyłanie...",
+      "reasons": {
+        "SPAM": "Spam",
+        "HARASSMENT": "Nękanie",
+        "HATE": "Mowa nienawiści",
+        "SEXUAL_CONTENT": "Treści seksualne",
+        "VIOLENCE": "Przemoc",
+        "MISINFORMATION": "Dezinformacja",
+        "OTHER": "Inne"
+      }
+    }
+  },
+  "DashboardComments": {
+    "eyebrow": "Komentarze",
+    "title": "Otwarte zgłoszenia",
+    "description": "Przeglądaj zgłoszone komentarze do rozdziałów bez zamieniania moderacji w osobne centrum sterowania.",
+    "noticeHidden": "Komentarz ukryto.",
+    "noticeRemoved": "Komentarz usunięto.",
+    "noticeResolved": "Zgłoszenie rozwiązano.",
+    "noticeRejected": "Zgłoszenie odrzucono.",
+    "card": {
+      "reports": "{count, plural, one {# zgłoszenie} few {# zgłoszenia} many {# zgłoszeń} other {# zgłoszenia}}",
+      "reportedBy": "Zgłoszony komentarz autora {author}. Dodano {date}.",
+      "commentLabel": "Komentarz",
+      "moderatorNote": "Notatka ze zgłoszenia: {details}"
+    },
+    "actions": {
+      "hide": "Ukryj",
+      "delete": "Usuń",
+      "resolve": "Rozwiąż",
+      "reject": "Odrzuć"
+    },
+    "emptyTitle": "Brak otwartych zgłoszeń.",
+    "emptyDescription": "Kolejka moderacji jest na razie pusta."
+  }
+}

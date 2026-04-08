@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { useSyncExternalStore, useTransition } from "react";
 
@@ -87,6 +88,7 @@ export function ThemeToggle({
   defaultThemeMode,
   onPersistThemeMode,
 }: ThemeToggleProps) {
+  const t = useTranslations("Common.theme");
   const themeState = useSyncExternalStore(
     subscribeToTheme,
     () => resolveThemeSnapshot(defaultThemeMode),
@@ -97,11 +99,13 @@ export function ThemeToggle({
   return (
     <div
       role="group"
-      aria-label="Theme mode"
+      aria-label={t("groupLabel")}
       className="flex items-center gap-0.5"
     >
       {themeModes.map((mode) => {
         const details = themeModeDetails[mode];
+        const label = t(mode.toLowerCase());
+        const description = t(`${mode.toLowerCase()}Description`);
 
         return (
           <button
@@ -118,8 +122,8 @@ export function ThemeToggle({
                 });
               }
             }}
-            title={details.description}
-            aria-label={details.label}
+            title={description}
+            aria-label={label}
             className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
               themeState.mode === mode
                 ? "bg-[var(--surface-hover)] text-foreground"
@@ -129,7 +133,7 @@ export function ThemeToggle({
             disabled={isPending}
           >
             <span className="shrink-0">{details.icon}</span>
-            <span className="sr-only">{details.label}</span>
+            <span className="sr-only">{label}</span>
           </button>
         );
       })}
