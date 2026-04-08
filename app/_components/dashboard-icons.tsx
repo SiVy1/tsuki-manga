@@ -2,6 +2,7 @@ type DashboardIconName =
   | "overview"
   | "series"
   | "chapters"
+  | "comments"
   | "settings"
   | "users"
   | "trash"
@@ -44,6 +45,14 @@ export function DashboardIcon({ name, className }: DashboardIconProps) {
           <path d="M4.5 9.5h.01" />
           <path d="M4.5 14h.01" />
           <path d="M4.5 18.5h.01" />
+        </svg>
+      );
+    case "comments":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className={classes}>
+          <path d="M6 17.5 3.5 20V6.5A2.5 2.5 0 0 1 6 4h12A2.5 2.5 0 0 1 20.5 6.5v8A2.5 2.5 0 0 1 18 17H6z" />
+          <path d="M8 9h8" />
+          <path d="M8 12.5h5" />
         </svg>
       );
     case "settings":

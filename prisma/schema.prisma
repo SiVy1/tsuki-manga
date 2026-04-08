@@ -80,6 +80,10 @@ model User {
   updatedChapters       Chapter[]      @relation("ChapterUpdatedBy")
   createdAssets         Asset[]        @relation("AssetCreatedBy")
   savedSeries           SavedSeries[]
+  authoredComments      Comment[]      @relation("CommentAuthor")
+  deletedComments       Comment[]      @relation("CommentDeletedBy")
+  commentReports        CommentReport[] @relation("CommentReportAuthor")
+  resolvedCommentReports CommentReport[] @relation("CommentReportResolver")
 }
 
 model Account {
@@ -226,6 +230,7 @@ model Chapter {
   updatedBy   User          @relation("ChapterUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
   pages       ChapterPage[]
   slugHistory ChapterSlugHistory[]
+  comments    Comment[]
 
   @@unique([seriesId, number, label])
   @@index([status, publishedAt, deletedAt])
@@ -275,4 +280,80 @@ model Asset {
   seriesCoverFor   Series?       @relation("SeriesCoverAsset")
   logoFor          InstanceSettings? @relation("InstanceLogoAsset")
   faviconFor       InstanceSettings? @relation("InstanceFaviconAsset")
+}
+
+enum CommentStatus {
+  VISIBLE
+  HIDDEN
+  DELETED
+}
+
+enum CommentReportReason {
+  SPAM
+  HARASSMENT
+  HATE
+  SEXUAL_CONTENT
+  VIOLENCE
+  MISINFORMATION
+  OTHER
+}
+
+enum CommentReportStatus {
+  OPEN
+  REVIEWED
+  RESOLVED
+  REJECTED
+}
+
+model Comment {
+  id           String        @id @default(uuid()) @db.Uuid
+  chapterId    String        @db.Uuid
+  authorId     String?       @db.Uuid
+  parentId     String?       @db.Uuid
+  body         String        @db.Text
+  status       CommentStatus @default(VISIBLE)
+  isEdited     Boolean       @default(false)
+  editedAt     DateTime?
+  deletedAt    DateTime?
+  deletedById  String?       @db.Uuid
+  deleteReason String?
+  authorIpHash String?
+  userAgent    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  chapter      Chapter       @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  author       User?         @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  parent       Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[]     @relation("CommentReplies")
+  deletedBy    User?         @relation("CommentDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+  reports      CommentReport[]
+
+  @@index([chapterId, createdAt])
+  @@index([parentId, createdAt])
+  @@index([authorId, createdAt])
+  @@index([status, createdAt])
+}
+
+model CommentReport {
+  id             String              @id @default(uuid()) @db.Uuid
+  commentId      String              @db.Uuid
+  authorId       String?             @db.Uuid
+  reason         CommentReportReason
+  details        String?             @db.Text
+  status         CommentReportStatus @default(OPEN)
+  resolvedAt     DateTime?
+  resolvedById   String?             @db.Uuid
+  resolutionNote String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  comment        Comment             @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  author         User?               @relation("CommentReportAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  resolvedBy     User?               @relation("CommentReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([commentId, createdAt])
+  @@index([authorId, createdAt])
+  @@index([status, createdAt])
+  @@index([reason, createdAt])
 }

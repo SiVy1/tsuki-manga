@@ -1,18 +1,12 @@
 import Link from "next/link";
 
+import { RolePreset } from "@/generated/prisma/client";
+
 import { signOut } from "@/app/_lib/auth";
 import { requireDashboardUser } from "@/app/_lib/auth/session";
 import { DashboardIcon } from "@/app/_components/dashboard-icons";
 import { DashboardNavLink } from "@/app/_components/dashboard-nav-link";
 import { SubmitButton } from "@/app/_components/submit-button";
-
-const navigation = [
-  { href: "/dashboard", label: "Overview", icon: "overview" as const },
-  { href: "/dashboard/series", label: "Series", icon: "series" as const },
-  { href: "/dashboard/chapters", label: "Chapters", icon: "chapters" as const },
-  { href: "/dashboard/settings", label: "Settings", icon: "settings" as const },
-  { href: "/dashboard/users", label: "Users", icon: "users" as const },
-];
 
 const secondaryNavigation = [
   { href: "/dashboard/trash/series", label: "Series trash", icon: "trash" as const },
@@ -25,6 +19,16 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const user = await requireDashboardUser();
+  const navigation = [
+    { href: "/dashboard", label: "Overview", icon: "overview" as const },
+    { href: "/dashboard/series", label: "Series", icon: "series" as const },
+    { href: "/dashboard/chapters", label: "Chapters", icon: "chapters" as const },
+    ...(user.rolePreset === RolePreset.ADMIN
+      ? [{ href: "/dashboard/comments", label: "Comments", icon: "comments" as const }]
+      : []),
+    { href: "/dashboard/settings", label: "Settings", icon: "settings" as const },
+    { href: "/dashboard/users", label: "Users", icon: "users" as const },
+  ];
 
   async function signOutAction() {
     "use server";

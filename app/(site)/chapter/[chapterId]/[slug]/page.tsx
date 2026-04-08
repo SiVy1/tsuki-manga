@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { ReadingMode } from "@/generated/prisma/client";
 
 import { saveReadingModePreferenceAction } from "@/app/_actions/preferences/actions";
+import { ChapterComments } from "@/app/_components/chapter-comments";
 import { ChapterReader } from "@/app/_components/chapter-reader";
 import { ReaderNextChapterLink } from "@/app/_components/reader-next-chapter-link";
 import { getOptionalSession } from "@/app/_lib/auth/session";
@@ -251,6 +252,11 @@ export default async function ChapterPage({ params }: PageProps) {
       <ChapterContinuation
         next={result.chapter.navigation.next}
         series={result.chapter.series}
+      />
+
+      <ChapterComments
+        chapterId={result.chapter.id}
+        chapterSlug={result.chapter.slug}
       />
 
       <ChapterNavigation
