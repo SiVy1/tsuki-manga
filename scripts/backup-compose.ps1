@@ -19,7 +19,7 @@ $draftMediaPath = Join-Path (Get-Location) ".storage\draft"
 $minioPath = Join-Path (Get-Location) ".docker-data\minio"
 
 Write-Host "Creating PostgreSQL dump at $dbDumpPath"
-docker compose exec -T postgres sh -lc "pg_dump -U postgres -d tsuki_manga" | Out-File -FilePath $dbDumpPath -Encoding utf8
+docker compose exec -T postgres sh -lc 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB"' | Out-File -FilePath $dbDumpPath -Encoding utf8
 
 if (Test-Path -LiteralPath $envPath) {
   Copy-Item -LiteralPath $envPath -Destination (Join-Path $backupDir ".env") -Force

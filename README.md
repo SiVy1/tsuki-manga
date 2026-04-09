@@ -79,6 +79,23 @@ The default compose stack now keeps critical data in visible host directories in
 
 This makes persistence and manual backup much more explicit for self-hosted use.
 
+For a VPS-style deployment behind a host nginx instance:
+
+- the app is exposed only on `127.0.0.1:${APP_PORT}` inside the host
+- PostgreSQL is only reachable on the internal Docker network as `postgres:5432`
+- MinIO's S3 API is only reachable on the internal Docker network as `minio:9000`
+- the MinIO console stays available locally on the host via `127.0.0.1:${MINIO_CONSOLE_PORT}`
+
+The compose stack now derives its internal service credentials from one set of `.env` variables:
+
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `MINIO_ROOT_USER`
+- `MINIO_ROOT_PASSWORD`
+
+This means you rotate those values once in `.env`, and compose wires the app, PostgreSQL, MinIO, and backup scripts to the same credentials.
+
 ### Quick backup
 
 ```bash

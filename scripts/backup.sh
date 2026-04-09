@@ -21,7 +21,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "Creating PostgreSQL dump"
-docker compose exec -T postgres sh -lc 'pg_dump -U postgres -d tsuki_manga' \
+docker compose exec -T postgres sh -lc 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
   | gzip -c > "${TMP_DIR}/tsuki_manga.sql.gz"
 
 if [ -f ".env" ]; then

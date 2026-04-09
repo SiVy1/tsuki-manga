@@ -1,0 +1,7 @@
+.docker-data
+.storage
+.next
+node_modules
+public/media
+backups
+.git
