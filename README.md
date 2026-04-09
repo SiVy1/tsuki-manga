@@ -110,6 +110,24 @@ You can override retention and output location:
 RETENTION_DAYS=30 OUTPUT_ROOT=/srv/tsuki-backups ./scripts/backup.sh
 ```
 
+### Restore
+
+Restore from a selected backup directory:
+
+```bash
+./scripts/restore.sh --from ./backups/tsuki-backup-YYYYMMDD-HHMMSS --mode full --force
+```
+
+Available restore modes:
+
+- `full`
+- `db-only`
+- `storage-only`
+- `env-only`
+- `minio-only`
+
+The restore flow validates checksums first and, unless explicitly disabled, creates a safety backup before overwriting current data.
+
 ### Useful commands
 
 ```bash
