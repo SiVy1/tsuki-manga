@@ -15,8 +15,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - tsuki_media_public:/app/public/media
-      - tsuki_media_draft:/app/.storage/draft
+      - ./public/media:/app/public/media
+      - ./.storage/draft:/app/.storage/draft
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))\""]
       interval: 15s
@@ -33,7 +33,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - tsuki_postgres:/var/lib/postgresql/data
+      - ./.docker-data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d tsuki_manga"]
       interval: 10s
@@ -51,7 +51,7 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - tsuki_minio:/data
+      - ./.docker-data/minio:/data
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://127.0.0.1:9000/minio/health/live || exit 1"]
       interval: 15s
@@ -73,9 +73,3 @@ services:
       - /bin/sh
       - -c
       - mc alias set local http://minio:9000 "$S3_ACCESS_KEY_ID" "$S3_SECRET_ACCESS_KEY" && mc mb --ignore-existing "local/$S3_BUCKET"
-
-volumes:
-  tsuki_postgres:
-  tsuki_media_public:
-  tsuki_media_draft:
-  tsuki_minio:

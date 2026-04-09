@@ -70,6 +70,29 @@ pnpm dev
 docker compose up --build
 ```
 
+The default compose stack now keeps critical data in visible host directories instead of hidden Docker named volumes:
+
+- `./.docker-data/postgres`
+- `./public/media`
+- `./.storage/draft`
+- `./.docker-data/minio` when the optional `minio` profile is enabled
+
+This makes persistence and manual backup much more explicit for self-hosted use.
+
+### Quick backup
+
+```bash
+./scripts/backup.sh
+```
+
+This creates a compressed backup archive under `./backups/`, includes a PostgreSQL dump, `.env`, and local storage copies, and prunes old archives with a default `14`-day retention.
+
+You can override retention and output location:
+
+```bash
+RETENTION_DAYS=30 OUTPUT_ROOT=/srv/tsuki-backups ./scripts/backup.sh
+```
+
 ### Useful commands
 
 ```bash
@@ -99,6 +122,7 @@ The intended workflow is simple: edit `content/site.json`, adjust the text for y
 - [Editorial workflow](./docs/features/editorial-workflow.md)
 - [Reader experience](./docs/features/reader-experience.md)
 - [Deployment runbook](./docs/runbooks/deployment.md)
+- [Backup and restore](./docs/runbooks/backup-and-restore.md)
 - [Post-deploy sanity check](./docs/runbooks/post-deploy-sanity-check.md)
 - [ADR index](./docs/adr/README.md)
 

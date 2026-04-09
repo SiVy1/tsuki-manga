@@ -45,6 +45,8 @@ AGENTS.md
 # local storage
 /.storage/
 /public/media/
+/.docker-data/
+/backups/
 
 # vercel
 .vercel
