@@ -31,6 +31,7 @@ TRUNCATE TABLE
   "SocialLink",
   "InstanceSettings",
   "SavedSeries",
+  "SeriesRemovalRequest",
   "ChapterPage",
   "ChapterSlugHistory",
   "SeriesSlugHistory",

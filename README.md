@@ -79,23 +79,6 @@ The default compose stack now keeps critical data in visible host directories in
 
 This makes persistence and manual backup much more explicit for self-hosted use.
 
-For a VPS-style deployment behind a host nginx instance:
-
-- the app is exposed only on `127.0.0.1:${APP_PORT}` inside the host
-- PostgreSQL is only reachable on the internal Docker network as `postgres:5432`
-- MinIO's S3 API is only reachable on the internal Docker network as `minio:9000`
-- the MinIO console stays available locally on the host via `127.0.0.1:${MINIO_CONSOLE_PORT}`
-
-The compose stack now derives its internal service credentials from one set of `.env` variables:
-
-- `POSTGRES_DB`
-- `POSTGRES_USER`
-- `POSTGRES_PASSWORD`
-- `MINIO_ROOT_USER`
-- `MINIO_ROOT_PASSWORD`
-
-This means you rotate those values once in `.env`, and compose wires the app, PostgreSQL, MinIO, and backup scripts to the same credentials.
-
 ### Quick backup
 
 ```bash
@@ -110,23 +93,17 @@ You can override retention and output location:
 RETENTION_DAYS=30 OUTPUT_ROOT=/srv/tsuki-backups ./scripts/backup.sh
 ```
 
-### Restore
-
-Restore from a selected backup directory:
+### Quick restore
 
 ```bash
-./scripts/restore.sh --from ./backups/tsuki-backup-YYYYMMDD-HHMMSS --mode full --force
+./scripts/restore.sh ./backups/tsuki-backup-YYYYMMDD-HHMMSS.tar.gz --force
 ```
 
-Available restore modes:
+To also restore `.env` and start the app after recovery:
 
-- `full`
-- `db-only`
-- `storage-only`
-- `env-only`
-- `minio-only`
-
-The restore flow validates checksums first and, unless explicitly disabled, creates a safety backup before overwriting current data.
+```bash
+RESTORE_ENV=1 START_APP=1 ./scripts/restore.sh ./backups/tsuki-backup-YYYYMMDD-HHMMSS.tar.gz --force
+```
 
 ### Useful commands
 

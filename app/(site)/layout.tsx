@@ -178,6 +178,9 @@ export default async function SiteLayout({
                   {common("rules")}
                 </Link>
               ) : null}
+              <Link href="/report-series" className="transition hover:text-foreground">
+                {common("reportSeries")}
+              </Link>
               <Link href="/feed.xml" className="transition hover:text-foreground">
                 {common("rssFeed")}
               </Link>

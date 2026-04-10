@@ -115,6 +115,15 @@ export default async function SeriesPage({ params }: PageProps) {
           {result.series.descriptionLong ? (
             <SeriesLongDescription description={result.series.descriptionLong} />
           ) : null}
+
+          <div>
+            <Link
+              href={`/report-series?series=${encodeURIComponent(`/series/${result.series.slug}`)}`}
+              className="text-sm text-muted underline underline-offset-4 transition hover:text-foreground"
+            >
+              {common("reportSeries")}
+            </Link>
+          </div>
         </div>
       </section>
 

@@ -58,6 +58,18 @@ enum ThemeMode {
   DARK
 }
 
+enum RemovalRequestClaimantRole {
+  COPYRIGHT_OWNER
+  AUTHORIZED_AGENT
+}
+
+enum SeriesRemovalRequestStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED_ACCEPTED
+  RESOLVED_REJECTED
+}
+
 model User {
   id                    String         @id @default(uuid()) @db.Uuid
   name                  String?
@@ -84,6 +96,7 @@ model User {
   deletedComments       Comment[]      @relation("CommentDeletedBy")
   commentReports        CommentReport[] @relation("CommentReportAuthor")
   resolvedCommentReports CommentReport[] @relation("CommentReportResolver")
+  reviewedRemovalRequests SeriesRemovalRequest[] @relation("SeriesRemovalRequestReviewer")
 }
 
 model Account {
@@ -184,6 +197,7 @@ model Series {
   slugHistory      SeriesSlugHistory[]
   taxonomyTerms    TaxonomyTerm[]
   savedByUsers     SavedSeries[]
+  removalRequests  SeriesRemovalRequest[]
 
   @@index([deletedAt])
   @@index([visibility, deletedAt])
@@ -356,4 +370,37 @@ model CommentReport {
   @@index([authorId, createdAt])
   @@index([status, createdAt])
   @@index([reason, createdAt])
+}
+
+model SeriesRemovalRequest {
+  id                       String                     @id @default(uuid()) @db.Uuid
+  seriesId                 String                     @db.Uuid
+  claimantName             String
+  organizationName         String?
+  claimantEmail            String
+  claimantRole             RemovalRequestClaimantRole
+  workDescription          String                     @db.Text
+  infringementExplanation  String                     @db.Text
+  requestedAction          String
+  additionalDetails        String?                    @db.Text
+  electronicSignature      String
+  goodFaithConfirmed       Boolean
+  accuracyConfirmed        Boolean
+  status                   SeriesRemovalRequestStatus @default(OPEN)
+  reporterIpHash           String?
+  userAgent                String?
+  adminNote                String?                    @db.Text
+  reviewedAt               DateTime?
+  reviewedById             String?                    @db.Uuid
+  resolutionNote           String?                    @db.Text
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+
+  series                   Series                     @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  reviewedBy               User?                      @relation("SeriesRemovalRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([seriesId, createdAt])
+  @@index([claimantEmail, createdAt])
+  @@index([status, createdAt])
+  @@index([reporterIpHash, createdAt])
 }

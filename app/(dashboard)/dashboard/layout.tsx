@@ -24,7 +24,10 @@ export default async function DashboardLayout({
     { href: "/dashboard/series", label: "Series", icon: "series" as const },
     { href: "/dashboard/chapters", label: "Chapters", icon: "chapters" as const },
     ...(user.rolePreset === RolePreset.ADMIN
-      ? [{ href: "/dashboard/comments", label: "Comments", icon: "comments" as const }]
+      ? [
+          { href: "/dashboard/comments", label: "Comments", icon: "comments" as const },
+          { href: "/dashboard/removal-requests", label: "Removal requests", icon: "legal" as const },
+        ]
       : []),
     { href: "/dashboard/settings", label: "Settings", icon: "settings" as const },
     { href: "/dashboard/users", label: "Users", icon: "users" as const },

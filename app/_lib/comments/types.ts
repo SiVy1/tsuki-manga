@@ -104,3 +104,30 @@ export type ModerateCommentInput = {
 export type ModerateReportInput = {
   reportId: string;
 };
+
+export type DashboardSeriesRemovalRequestItem = {
+  id: string;
+  status: string;
+  statusLabel: string;
+  createdAtLabel: string;
+  reviewedAtLabel: string | null;
+  requestedActionLabel: string;
+  claimantName: string;
+  claimantEmail: string;
+  claimantRoleLabel: string;
+  organizationName: string | null;
+  workDescription: string;
+  infringementExplanation: string;
+  additionalDetails: string | null;
+  adminNote: string | null;
+  resolutionNote: string | null;
+  electronicSignature: string;
+  reporterIpHash: string | null;
+  sameIpOpenCount: number;
+  series: {
+    id: string;
+    slug: string;
+    title: string;
+    visibility: string;
+  };
+};
