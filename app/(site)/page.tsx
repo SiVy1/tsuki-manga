@@ -32,6 +32,13 @@ export default async function HomePage() {
         ]),
     ).values(),
   );
+  const discordLink =
+    data.instanceSettings.socialLinks.find((link) => {
+      const label = link.label.toLowerCase();
+      const url = link.url.toLowerCase();
+
+      return label.includes("discord") || url.includes("discord");
+    }) ?? null;
 
   return (
     <main className="flex-1 py-10 md:py-14">
@@ -57,12 +64,16 @@ export default async function HomePage() {
             >
               {common("browseCatalog")}
             </Link>
-            <Link
-              href="#latest"
-              className="rounded-full border border-border px-5 py-3 text-muted transition hover:border-foreground/20 hover:text-foreground"
-            >
-              {t("latestUpdates")}
-            </Link>
+            {discordLink ? (
+              <a
+                href={discordLink.url}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-border px-5 py-3 text-muted transition hover:border-foreground/20 hover:text-foreground"
+              >
+                Join Discord
+              </a>
+            ) : null}
           </div>
         </div>
       </section>
