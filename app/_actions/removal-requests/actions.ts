@@ -6,6 +6,7 @@ import { SeriesRemovalRequestStatus, SeriesVisibility } from "@/generated/prisma
 
 import { requireAdmin } from "@/app/_lib/auth/session";
 import { prisma } from "@/app/_lib/db/client";
+import { notifySeriesRemovalRequestCreated } from "@/app/_lib/notifications/discord";
 import { checkRemovalRequestAbuse, getRemovalRequestRequestContext, resolveSeriesFromPublicInput, validateRemovalRequestTiming } from "@/app/_lib/removal-requests/service";
 import { fail, ok } from "@/app/_lib/utils/action-result";
 import {
@@ -83,6 +84,11 @@ export async function createSeriesRemovalRequestAction(rawInput: unknown) {
   });
 
   revalidateRemovalRequestSurfaces();
+
+  await notifySeriesRemovalRequestCreated({
+    seriesTitle: request.series.title,
+    claimantName: parsed.data.claimantName,
+  });
 
   return ok({
     requestId: request.id,

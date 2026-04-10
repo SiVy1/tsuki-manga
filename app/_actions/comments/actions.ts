@@ -11,7 +11,9 @@ import {
 
 import { requireSessionUser } from "@/app/_lib/auth/session";
 import { prisma } from "@/app/_lib/db/client";
+import { notifyCommentReported } from "@/app/_lib/notifications/discord";
 import { fail, ok } from "@/app/_lib/utils/action-result";
+import { humanizeEnumValue } from "@/app/_lib/utils/formatting";
 import {
   createCommentInputSchema,
   deleteCommentInputSchema,
@@ -272,6 +274,34 @@ export async function reportCommentAction(rawInput: unknown) {
       status: CommentReportStatus.OPEN,
     },
   });
+
+  const chapterDetails = await prisma.chapter.findUnique({
+    where: {
+      id: chapter.id,
+    },
+    select: {
+      id: true,
+      slug: true,
+      number: true,
+      label: true,
+      series: {
+        select: {
+          title: true,
+        },
+      },
+    },
+  });
+
+  if (chapterDetails) {
+    await notifyCommentReported({
+      seriesTitle: chapterDetails.series.title,
+      chapterId: chapterDetails.id,
+      chapterSlug: chapterDetails.slug,
+      chapterNumber: chapterDetails.number.toString(),
+      chapterLabel: chapterDetails.label,
+      reasonLabel: humanizeEnumValue(parsed.data.reason),
+    });
+  }
 
   revalidateCommentSurfaces(chapter.id, chapter.slug);
 

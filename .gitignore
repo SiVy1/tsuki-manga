@@ -36,6 +36,7 @@ yarn-error.log*
 .env*
 !.env.example
 .tmp*
+content/site.local.json
 docs/
 AGENTS.md
 

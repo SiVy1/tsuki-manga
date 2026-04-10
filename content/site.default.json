@@ -1,6 +1,6 @@
 {
   "rules": {
-    "enabled": true,
+    "enabled": false,
     "title": "Community rules",
     "updatedAt": "2026-04-07",
     "items": [
@@ -12,7 +12,7 @@
     ]
   },
   "recruitment": {
-    "enabled": true,
+    "enabled": false,
     "title": "We are recruiting",
     "summary": "We are looking for a few reliable people who want to help us release chapters on a steady schedule.",
     "roles": [

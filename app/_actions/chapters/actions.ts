@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Prisma, AssetKind, AssetScope, ChapterStatus } from "@/generated/prisma/client";
 
 import { prisma } from "@/app/_lib/db/client";
+import { notifyChapterPublished } from "@/app/_lib/notifications/discord";
 import { assertChapterSlugAvailable } from "@/app/_lib/db/slugs";
 import { requireAdmin, requirePermission } from "@/app/_lib/auth/session";
 import { PermissionBits } from "@/app/_lib/permissions/bits";
@@ -734,7 +735,7 @@ export async function replaceChapterPageRedirectAction(
 }
 
 export async function publishChapterAction(rawInput: unknown) {
-  await requirePermission(PermissionBits.PUBLISH);
+  const user = await requirePermission(PermissionBits.PUBLISH);
   const parsed = publishChapterInputSchema.safeParse(rawInput);
 
   if (!parsed.success) {
@@ -780,6 +781,46 @@ export async function publishChapterAction(rawInput: unknown) {
       },
     }),
   ]);
+
+  const publishedChapter = await prisma.chapter.findUnique({
+    where: {
+      id: chapter.id,
+    },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      label: true,
+      number: true,
+      publishedAt: true,
+      series: {
+        select: {
+          title: true,
+          coverAsset: {
+            select: {
+              storageKey: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (publishedChapter) {
+    await notifyChapterPublished({
+      seriesTitle: publishedChapter.series.title,
+      seriesCoverUrl: publishedChapter.series.coverAsset
+        ? storageDriver.getPublicUrl(publishedChapter.series.coverAsset.storageKey)
+        : null,
+      chapterId: publishedChapter.id,
+      chapterSlug: publishedChapter.slug,
+      chapterNumber: publishedChapter.number.toString(),
+      chapterLabel: publishedChapter.label,
+      chapterTitle: publishedChapter.title,
+      publishedAt: publishedChapter.publishedAt,
+      publishedByName: user.displayName ?? user.name ?? null,
+    });
+  }
 
   return ok({ chapterId: chapter.id });
 }

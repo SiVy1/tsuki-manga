@@ -117,7 +117,10 @@ pnpm build
 
 ## Public content customization
 
-`Tsuki Manga` now includes a simple public content file at [`content/site.json`](./content/site.json).
+`Tsuki Manga` now includes a simple public content loader with:
+
+- a repo-tracked default file at [`content/site.default.json`](./content/site.default.json)
+- an optional local override at `content/site.local.json`
 
 You can customize:
 
@@ -125,7 +128,13 @@ You can customize:
 - a recruitment announcement shown at `/recruitment`
 - the optional recruitment callout on the homepage
 
-The intended workflow is simple: edit `content/site.json`, adjust the text for your group, and redeploy the app.
+The intended workflow for self-hosting is:
+
+- keep `content/site.default.json` in Git as the baseline
+- create `content/site.local.json` on your server for instance-specific content
+- pull updates without having to stash or move your local public-content changes each time
+
+If `content/site.local.json` exists, the app uses it first. Otherwise it falls back to `content/site.default.json`.
 
 ## Documentation
 

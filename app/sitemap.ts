@@ -6,6 +6,8 @@ import { prisma } from "@/app/_lib/db/client";
 import { isMissingOrUnavailableDatabaseError } from "@/app/_lib/db/errors";
 import { buildAbsoluteUrl } from "@/app/_lib/seo/public-url";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const homeUrl = await buildAbsoluteUrl();
   const seriesIndexUrl = await buildAbsoluteUrl("series");
