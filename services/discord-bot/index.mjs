@@ -2,6 +2,8 @@ import http from "node:http";
 
 import {
   ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   Client,
   EmbedBuilder,
   GatewayIntentBits,
@@ -43,16 +45,21 @@ const messages = {
     menuPlaceholder: "Choose series to get new chapter notifications",
     menuSaved: "Your Discord series notifications have been updated.",
     chapterPublished: "New chapter published",
+    chapterPublishedLead: "A new chapter is now available for this series.",
     newSeries: "New series added",
+    newSeriesLead: "A new series has just been added to the catalog.",
     commentReported: "Comment reported",
     copyrightReported: "Copyright report received",
-    openChapter: "Open chapter",
-    openSeries: "Open series",
+    openChapter: "Read now",
+    openSeries: "View series",
     openDashboard: "Open dashboard",
     reason: "Reason",
     claimant: "Claimant",
     series: "Series",
     chapter: "Chapter",
+    details: "Details",
+    moderationLead: "A new moderation report needs review.",
+    copyrightLead: "A new copyright report is waiting for review.",
     testTitle: "Discord bot test",
     testDescription: "Dashboard -> bot connection works.",
   },
@@ -65,16 +72,21 @@ const messages = {
     menuPlaceholder: "Wybierz serie, o ktorych chcesz dostawac powiadomienia o nowych rozdzialach",
     menuSaved: "Zaktualizowano serie, o ktorych bedziesz dostawac powiadomienia na Discordzie.",
     chapterPublished: "Opublikowano nowy rozdzial",
+    chapterPublishedLead: "Nowy rozdzial tej serii jest juz dostepny.",
     newSeries: "Dodano nowa serie",
+    newSeriesLead: "Do katalogu trafila nowa seria.",
     commentReported: "Zgloszono komentarz",
     copyrightReported: "Otrzymano zgloszenie praw autorskich",
-    openChapter: "Otworz rozdzial",
-    openSeries: "Otworz serie",
+    openChapter: "Czytaj teraz",
+    openSeries: "Zobacz serie",
     openDashboard: "Otworz panel",
     reason: "Powod",
     claimant: "Zglaszajacy",
     series: "Seria",
     chapter: "Rozdzial",
+    details: "Szczegoly",
+    moderationLead: "Nowe zgloszenie moderacyjne czeka na sprawdzenie.",
+    copyrightLead: "Nowe zgloszenie praw autorskich czeka na sprawdzenie.",
     testTitle: "Test bota Discord",
     testDescription: "Polaczenie dashboard -> bot dziala.",
   },
@@ -112,6 +124,24 @@ function sendJson(res, status, body) {
     "Content-Type": "application/json",
   });
   res.end(JSON.stringify(body));
+}
+
+function buildLinkRow(locale, links) {
+  const buttons = links
+    .filter((entry) => entry?.url)
+    .slice(0, 5)
+    .map((entry) =>
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setLabel(entry.label)
+        .setURL(entry.url),
+    );
+
+  if (buttons.length === 0) {
+    return [];
+  }
+
+  return [new ActionRowBuilder().addComponents(buttons)];
 }
 
 function requireAuth(req, res) {
@@ -458,23 +488,40 @@ async function handleEvent(body, res) {
     }
 
     const role = body.data.seriesSlug ? findSeriesRole(guild, rolePrefix, body.data.seriesSlug) : null;
+    const chapterLabel = `${body.data.chapterNumber}${body.data.chapterLabel ? ` ${body.data.chapterLabel}` : ""}`;
     const embed = new EmbedBuilder()
-      .setTitle(body.data.seriesTitle)
+      .setColor(0x355a4b)
+      .setAuthor({
+        name: t(locale, "chapterPublished"),
+      })
+      .setTitle(`${body.data.seriesTitle}`)
       .setURL(body.data.chapterUrl)
-      .setDescription(
-        [t(locale, "chapterPublished"), `${body.data.chapterNumber}${body.data.chapterLabel ? ` ${body.data.chapterLabel}` : ""}`, body.data.chapterTitle]
-          .filter(Boolean)
-          .join("\n"),
+      .setDescription([t(locale, "chapterPublishedLead"), body.data.chapterTitle].filter(Boolean).join("\n"))
+      .addFields(
+        {
+          name: t(locale, "chapter"),
+          value: chapterLabel,
+          inline: true,
+        },
+        {
+          name: t(locale, "series"),
+          value: body.data.seriesTitle,
+          inline: true,
+        },
       )
       .setTimestamp(new Date(body.data.publishedAt));
 
     if (body.data.coverUrl) {
-      embed.setImage(body.data.coverUrl);
+      embed.setThumbnail(body.data.coverUrl);
     }
 
     const message = await channel.send({
       content: role ? `<@&${role.id}>` : undefined,
       embeds: [embed],
+      components: buildLinkRow(locale, [
+        { label: t(locale, "openChapter"), url: body.data.chapterUrl },
+        { label: t(locale, "openSeries"), url: body.data.seriesUrl },
+      ]),
     });
 
     sendJson(res, 200, {
@@ -498,15 +545,18 @@ async function handleEvent(body, res) {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle(t(locale, "newSeries"))
-      .setDescription(body.data.title)
+      .setColor(0x4d6a89)
+      .setAuthor({
+        name: t(locale, "newSeries"),
+      })
+      .setTitle(body.data.title)
       .setURL(body.data.url)
+      .setDescription([t(locale, "newSeriesLead"), body.data.description].filter(Boolean).join("\n\n"))
       .addFields(
         {
-          name: t(locale, "openSeries"),
-          value: body.data.url,
+          name: t(locale, "series"),
+          value: body.data.title,
         },
-        ...(body.data.description ? [{ name: "Info", value: body.data.description.slice(0, 1024) }] : []),
       );
 
     if (body.data.coverUrl) {
@@ -515,6 +565,9 @@ async function handleEvent(body, res) {
 
     const message = await channel.send({
       embeds: [embed],
+      components: buildLinkRow(locale, [
+        { label: t(locale, "openSeries"), url: body.data.url },
+      ]),
     });
 
     sendJson(res, 200, {
@@ -542,7 +595,9 @@ async function handleEvent(body, res) {
       content,
       embeds: [
         new EmbedBuilder()
+          .setColor(0x7b5a34)
           .setTitle(t(locale, "commentReported"))
+          .setDescription(t(locale, "moderationLead"))
           .addFields(
             { name: t(locale, "series"), value: body.data.seriesTitle, inline: true },
             {
@@ -551,11 +606,13 @@ async function handleEvent(body, res) {
               inline: true,
             },
             { name: t(locale, "reason"), value: body.data.reasonLabel, inline: true },
-            { name: t(locale, "openChapter"), value: body.data.chapterUrl },
-            { name: t(locale, "openDashboard"), value: body.data.dashboardUrl },
           )
           .setTimestamp(new Date(body.occurredAt)),
       ],
+      components: buildLinkRow(locale, [
+        { label: t(locale, "openChapter"), url: body.data.chapterUrl },
+        { label: t(locale, "openDashboard"), url: body.data.dashboardUrl },
+      ]),
     });
 
     sendJson(res, 200, {
@@ -583,14 +640,18 @@ async function handleEvent(body, res) {
       content,
       embeds: [
         new EmbedBuilder()
+          .setColor(0x8a4b4b)
           .setTitle(t(locale, "copyrightReported"))
+          .setDescription(t(locale, "copyrightLead"))
           .addFields(
             { name: t(locale, "series"), value: body.data.seriesTitle, inline: true },
             { name: t(locale, "claimant"), value: body.data.claimantName, inline: true },
-            { name: t(locale, "openDashboard"), value: body.data.dashboardUrl },
           )
           .setTimestamp(new Date(body.occurredAt)),
       ],
+      components: buildLinkRow(locale, [
+        { label: t(locale, "openDashboard"), url: body.data.dashboardUrl },
+      ]),
     });
 
     sendJson(res, 200, {

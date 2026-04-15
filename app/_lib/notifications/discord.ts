@@ -391,6 +391,9 @@ export async function notifyChapterPublished(
       seriesId: input.seriesId ?? null,
       seriesTitle: input.seriesTitle,
       seriesSlug: input.seriesSlug ?? null,
+      seriesUrl: input.seriesSlug
+        ? await buildAbsoluteUrl(`/series/${input.seriesSlug}`)
+        : null,
       chapterId: input.chapterId,
       chapterSlug: input.chapterSlug,
       chapterNumber: input.chapterNumber,
