@@ -20,7 +20,11 @@ import { fail, ok } from "@/app/_lib/utils/action-result";
 import { resolveSlug } from "@/app/_lib/utils/slugs";
 
 async function getOrCreateInstanceSettings() {
-  const existing = await prisma.instanceSettings.findFirst();
+  const existing = await prisma.instanceSettings.findFirst({
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
 
   if (existing) {
     return existing;

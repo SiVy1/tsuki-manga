@@ -5,7 +5,11 @@ import { getEnv } from "@/app/_lib/settings/env";
 type DiscordBotAdminPayload = Record<string, unknown>;
 
 async function getOrCreateInstanceSettings() {
-  const existing = await prisma.instanceSettings.findFirst();
+  const existing = await prisma.instanceSettings.findFirst({
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
 
   if (existing) {
     return existing;
@@ -18,11 +22,25 @@ async function getOrCreateInstanceSettings() {
 
 export async function getOrCreateDiscordIntegrationConfig() {
   const settings = await getOrCreateInstanceSettings();
-  const existing = await prisma.discordIntegrationConfig.findUnique({
-    where: {
-      instanceSettingsId: settings.id,
-    },
+  const candidates = await prisma.discordIntegrationConfig.findMany({
+    orderBy: [
+      {
+        createdAt: "asc",
+      },
+    ],
   });
+
+  const existing =
+    candidates.find(
+      (entry) =>
+        Boolean(entry.guildId) ||
+        Boolean(entry.announcementChannelId) ||
+        Boolean(entry.subscriptionChannelId) ||
+        Boolean(entry.moderationChannelId) ||
+        Boolean(entry.newSeriesChannelId),
+    ) ??
+    candidates.find((entry) => entry.instanceSettingsId === settings.id) ??
+    null;
 
   if (existing) {
     return existing;

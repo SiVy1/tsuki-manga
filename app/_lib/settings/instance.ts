@@ -13,6 +13,9 @@ export async function getInstanceSettings() {
 
   try {
     settings = await prisma.instanceSettings.findFirst({
+      orderBy: {
+        createdAt: "asc",
+      },
       include: {
         logoAsset: true,
         faviconAsset: true,

@@ -37,11 +37,11 @@ const messages = {
   en: {
     helpTitle: "Tsuki Manga bot",
     helpDescription:
-      "Use the subscription channel menu to opt in or out of series notifications.",
-    subscriptionsNone: "You do not have any Tsuki series roles yet.",
-    subscriptionsTitle: "Your series subscriptions",
-    menuPlaceholder: "Choose series notifications",
-    menuSaved: "Series subscriptions updated.",
+      "Choose the series you want to follow to get Discord notifications about new chapters.",
+    subscriptionsNone: "You are not following any series on Discord yet.",
+    subscriptionsTitle: "Series you follow on Discord",
+    menuPlaceholder: "Choose series to get new chapter notifications",
+    menuSaved: "Your Discord series notifications have been updated.",
     chapterPublished: "New chapter published",
     newSeries: "New series added",
     commentReported: "Comment reported",
@@ -59,11 +59,11 @@ const messages = {
   pl: {
     helpTitle: "Bot Tsuki Manga",
     helpDescription:
-      "Uzyj menu na kanale subskrypcji, aby wlaczyc lub wylaczyc powiadomienia o seriach.",
-    subscriptionsNone: "Nie masz jeszcze zadnych rol serii Tsuki.",
-    subscriptionsTitle: "Twoje subskrypcje serii",
-    menuPlaceholder: "Wybierz powiadomienia o seriach",
-    menuSaved: "Zaktualizowano subskrypcje serii.",
+      "Wybierz serie, o ktorych chcesz dostawac na Discordzie powiadomienia o nowych rozdzialach.",
+    subscriptionsNone: "Nie obserwujesz jeszcze zadnej serii na Discordzie.",
+    subscriptionsTitle: "Serie, ktore obserwujesz na Discordzie",
+    menuPlaceholder: "Wybierz serie, o ktorych chcesz dostawac powiadomienia o nowych rozdzialach",
+    menuSaved: "Zaktualizowano serie, o ktorych bedziesz dostawac powiadomienia na Discordzie.",
     chapterPublished: "Opublikowano nowy rozdzial",
     newSeries: "Dodano nowa serie",
     commentReported: "Zgloszono komentarz",
@@ -126,20 +126,24 @@ function requireAuth(req, res) {
 }
 
 function buildManagedRoleName(rolePrefix, seriesId, title) {
-  const suffix = String(title ?? "")
-    .replace(/\s+/g, " ")
+  const slug = String(seriesId ?? "")
     .trim()
-    .slice(0, 60);
-  return `${rolePrefix}:${seriesId}:${suffix || "series"}`.slice(0, 100);
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
+
+  return `${rolePrefix}:${slug || "series"}`.slice(0, 100);
 }
 
-function findSeriesRole(guild, rolePrefix, seriesId) {
-  return guild.roles.cache.find((role) => role.name.startsWith(`${rolePrefix}:${seriesId}:`)) ?? null;
+function findSeriesRole(guild, rolePrefix, seriesSlug) {
+  return guild.roles.cache.find((role) => role.name === buildManagedRoleName(rolePrefix, seriesSlug)) ?? null;
 }
 
 async function ensureSeriesRole(guild, rolePrefix, series) {
-  const existing = findSeriesRole(guild, rolePrefix, series.id);
-  const nextName = buildManagedRoleName(rolePrefix, series.id, series.title);
+  const existing = findSeriesRole(guild, rolePrefix, series.slug);
+  const nextName = buildManagedRoleName(rolePrefix, series.slug);
 
   if (!existing) {
     return guild.roles.create({
@@ -202,7 +206,7 @@ async function publishSubscriptionMenu({
   for (const [index, chunk] of chunks.entries()) {
     const options = chunk.map((series) => ({
       label: series.title.slice(0, 100),
-      value: `${rolePrefix}:${series.id}`,
+      value: `${rolePrefix}:${series.slug}`,
       description: series.slug.slice(0, 100),
     }));
 
@@ -254,8 +258,8 @@ client.on("interactionCreate", async (interaction) => {
         }
 
         const managedRoles = member.roles.cache
-          .filter((role) => /^[^:]+:[^:]+:/.test(role.name))
-          .map((role) => role.name.split(":").slice(2).join(":"))
+          .filter((role) => /^[^:]+:[^:]+$/.test(role.name))
+          .map((role) => role.name.split(":").slice(1).join(":"))
           .filter(Boolean);
 
         await interaction.reply({
@@ -295,8 +299,9 @@ client.on("interactionCreate", async (interaction) => {
       const roleIdsToAdd = [];
 
       for (const optionValue of optionSeriesIds) {
-        const [rolePrefix, seriesId] = optionValue.split(":");
-        const role = findSeriesRole(guild, rolePrefix, seriesId);
+        const [rolePrefix, ...slugParts] = optionValue.split(":");
+        const seriesSlug = slugParts.join(":");
+        const role = findSeriesRole(guild, rolePrefix, seriesSlug);
 
         if (!role) {
           continue;
@@ -452,7 +457,7 @@ async function handleEvent(body, res) {
       throw new Error("Announcement channel is not a text channel.");
     }
 
-    const role = body.data.seriesId ? findSeriesRole(guild, rolePrefix, body.data.seriesId) : null;
+    const role = body.data.seriesSlug ? findSeriesRole(guild, rolePrefix, body.data.seriesSlug) : null;
     const embed = new EmbedBuilder()
       .setTitle(body.data.seriesTitle)
       .setURL(body.data.chapterUrl)
