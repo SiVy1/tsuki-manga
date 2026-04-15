@@ -1,3 +1,5 @@
+import { prisma } from "@/app/_lib/db/client";
+import { getOrCreateDiscordIntegrationConfig } from "@/app/_lib/discord/integration";
 import { getEnv } from "@/app/_lib/settings/env";
 import { buildAbsoluteUrl } from "@/app/_lib/seo/public-url";
 
@@ -13,9 +15,6 @@ type DiscordEmbed = {
   description?: string;
   color?: number;
   fields?: DiscordEmbedField[];
-  thumbnail?: {
-    url: string;
-  };
   image?: {
     url: string;
   };
@@ -25,6 +24,28 @@ type DiscordEmbed = {
 type DiscordWebhookPayload = {
   username?: string;
   embeds: DiscordEmbed[];
+};
+
+type DiscordBotEventEnvelope<T> = {
+  eventId: string;
+  eventType:
+    | "series.created"
+    | "chapter.published"
+    | "comment.reported"
+    | "copyright.reported";
+  occurredAt: string;
+  schemaVersion: 1;
+  config: {
+    guildId: string;
+    defaultLocale: string;
+    rolePrefix: string;
+    announcementChannelId: string | null;
+    subscriptionChannelId: string | null;
+    moderationChannelId: string | null;
+    newSeriesChannelId: string | null;
+    staffAlertRoleId: string | null;
+  };
+  data: T;
 };
 
 const PUBLIC_EMBED_COLOR = 0x355a4b;
@@ -79,6 +100,137 @@ async function sendWebhookSafely(
   }
 }
 
+async function createDeliveryLog(input: {
+  discordConfigId: string;
+  eventId: string;
+  eventType: string;
+  status: "SENT" | "FAILED" | "SKIPPED";
+  message?: string | null;
+  targetChannelId?: string | null;
+  targetMessageId?: string | null;
+}) {
+  await prisma.discordDeliveryLog.create({
+    data: {
+      discordConfigId: input.discordConfigId,
+      eventId: input.eventId,
+      eventType: input.eventType,
+      status: input.status,
+      message: input.message ?? null,
+      targetChannelId: input.targetChannelId ?? null,
+      targetMessageId: input.targetMessageId ?? null,
+    },
+  });
+}
+
+async function sendBotEvent<T>(
+  eventType: DiscordBotEventEnvelope<T>["eventType"],
+  enabled: boolean,
+  data: T,
+  fallback?: () => Promise<void>,
+) {
+  const env = getEnv();
+  const config = await getOrCreateDiscordIntegrationConfig();
+  const eventId = crypto.randomUUID();
+
+  if (!enabled) {
+    await createDeliveryLog({
+      discordConfigId: config.id,
+      eventId,
+      eventType,
+      status: "SKIPPED",
+      message: "Discord event type disabled in integration config.",
+    });
+    return;
+  }
+
+  if (env.DISCORD_BOT_INTERNAL_URL && env.DISCORD_BOT_INTERNAL_SECRET && config.guildId) {
+    const envelope: DiscordBotEventEnvelope<T> = {
+      eventId,
+      eventType,
+      occurredAt: new Date().toISOString(),
+      schemaVersion: 1,
+      config: {
+        guildId: config.guildId,
+        defaultLocale: config.defaultLocale,
+        rolePrefix: config.rolePrefix,
+        announcementChannelId: config.announcementChannelId,
+        subscriptionChannelId: config.subscriptionChannelId,
+        moderationChannelId: config.moderationChannelId,
+        newSeriesChannelId: config.newSeriesChannelId,
+        staffAlertRoleId: config.staffAlertRoleId,
+      },
+      data,
+    };
+
+    try {
+      const response = await fetch(`${env.DISCORD_BOT_INTERNAL_URL}/internal/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${env.DISCORD_BOT_INTERNAL_SECRET}`,
+        },
+        body: JSON.stringify(envelope),
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        throw new Error(
+          `Discord bot event failed with status ${response.status}.${text ? ` Response: ${text}` : ""}`,
+        );
+      }
+
+      const result = (await response.json().catch(() => null)) as
+        | {
+            targetChannelId?: string;
+            targetMessageId?: string;
+          }
+        | null;
+
+      await createDeliveryLog({
+        discordConfigId: config.id,
+        eventId,
+        eventType,
+        status: "SENT",
+        targetChannelId: result?.targetChannelId ?? null,
+        targetMessageId: result?.targetMessageId ?? null,
+      });
+
+      return;
+    } catch (error) {
+      await createDeliveryLog({
+        discordConfigId: config.id,
+        eventId,
+        eventType,
+        status: "FAILED",
+        message: error instanceof Error ? error.message : "Discord bot event failed.",
+      });
+      console.error(`Failed to send ${eventType} to Discord bot.`, error);
+      return;
+    }
+  }
+
+  if (fallback) {
+    await fallback();
+    await createDeliveryLog({
+      discordConfigId: config.id,
+      eventId,
+      eventType,
+      status: "SKIPPED",
+      message: "Discord bot internal URL not configured. Legacy webhook fallback used.",
+    });
+    return;
+  }
+
+  await createDeliveryLog({
+    discordConfigId: config.id,
+    eventId,
+    eventType,
+    status: "SKIPPED",
+    message: "Discord bot integration not configured.",
+  });
+}
+
 export function buildChapterPublishedDiscordPayload(input: {
   seriesTitle: string;
   seriesCoverUrl: string | null;
@@ -88,7 +240,6 @@ export function buildChapterPublishedDiscordPayload(input: {
   chapterLabel: string | null;
   chapterTitle: string | null;
   publishedAt?: Date | null;
-  publishedByName?: string | null;
 }) {
   const chapterPath = `/chapter/${input.chapterId}/${input.chapterSlug}`;
   const chapterLine = compactLabel([`Chapter ${input.chapterNumber}`, input.chapterLabel]);
@@ -102,9 +253,7 @@ export function buildChapterPublishedDiscordPayload(input: {
       {
         title: input.seriesTitle,
         url: chapterUrl,
-        description: input.chapterTitle
-          ? `${chapterLine} · ${input.chapterTitle}`
-          : chapterLine,
+        description: input.chapterTitle ? `${chapterLine} · ${input.chapterTitle}` : chapterLine,
         color: PUBLIC_EMBED_COLOR,
         ...(seriesCoverUrl
           ? {
@@ -201,41 +350,119 @@ export async function buildSeriesRemovalRequestDiscordPayload(input: {
   };
 }
 
-export async function notifyChapterPublished(
-  input: Parameters<typeof buildChapterPublishedDiscordPayload>[0],
-) {
-  const payload = await buildChapterPublishedDiscordPayload(input);
-  const env = getEnv();
+export async function notifySeriesCreated(input: {
+  seriesId: string;
+  title: string;
+  slug: string;
+  descriptionShort?: string | null;
+  coverUrl?: string | null;
+  visibility: "PUBLIC" | "HIDDEN";
+}) {
+  if (input.visibility !== "PUBLIC") {
+    return;
+  }
 
-  await sendWebhookSafely(
-    env.DISCORD_PUBLIC_WEBHOOK_URL || null,
-    payload,
-    "public chapter release",
+  const seriesUrl = await buildAbsoluteUrl(`/series/${input.slug}`);
+  const coverUrl = await toAbsoluteAssetUrl(input.coverUrl);
+
+  await sendBotEvent("series.created", true, {
+    seriesId: input.seriesId,
+    title: input.title,
+    slug: input.slug,
+    url: seriesUrl,
+    coverUrl,
+    description: input.descriptionShort ?? null,
+  });
+}
+
+export async function notifyChapterPublished(
+  input: Parameters<typeof buildChapterPublishedDiscordPayload>[0] & {
+    seriesId?: string;
+    seriesSlug?: string | null;
+  },
+) {
+  const chapterUrl = await buildAbsoluteUrl(`/chapter/${input.chapterId}/${input.chapterSlug}`);
+  const coverUrl = await toAbsoluteAssetUrl(input.seriesCoverUrl);
+
+  await sendBotEvent(
+    "chapter.published",
+    (await getOrCreateDiscordIntegrationConfig()).chapterPublishedEnabled,
+    {
+      seriesId: input.seriesId ?? null,
+      seriesTitle: input.seriesTitle,
+      seriesSlug: input.seriesSlug ?? null,
+      chapterId: input.chapterId,
+      chapterSlug: input.chapterSlug,
+      chapterNumber: input.chapterNumber,
+      chapterLabel: input.chapterLabel,
+      chapterTitle: input.chapterTitle,
+      chapterUrl,
+      coverUrl,
+      publishedAt: (input.publishedAt ?? new Date()).toISOString(),
+    },
+    async () => {
+      const payload = await buildChapterPublishedDiscordPayload(input);
+      const env = getEnv();
+      await sendWebhookSafely(
+        env.DISCORD_PUBLIC_WEBHOOK_URL || null,
+        payload,
+        "public chapter release",
+      );
+    },
   );
 }
 
 export async function notifyCommentReported(
   input: Parameters<typeof buildCommentReportedDiscordPayload>[0],
 ) {
-  const payload = await buildCommentReportedDiscordPayload(input);
-  const env = getEnv();
+  const dashboardUrl = await buildAbsoluteUrl("/dashboard/comments");
+  const chapterUrl = await buildAbsoluteUrl(`/chapter/${input.chapterId}/${input.chapterSlug}`);
 
-  await sendWebhookSafely(
-    env.DISCORD_PRIVATE_WEBHOOK_URL || null,
-    payload,
-    "private comment report",
+  await sendBotEvent(
+    "comment.reported",
+    (await getOrCreateDiscordIntegrationConfig()).commentReportedEnabled,
+    {
+      seriesTitle: input.seriesTitle,
+      chapterId: input.chapterId,
+      chapterNumber: input.chapterNumber,
+      chapterLabel: input.chapterLabel,
+      chapterUrl,
+      dashboardUrl,
+      reasonLabel: input.reasonLabel,
+    },
+    async () => {
+      const payload = await buildCommentReportedDiscordPayload(input);
+      const env = getEnv();
+      await sendWebhookSafely(
+        env.DISCORD_PRIVATE_WEBHOOK_URL || null,
+        payload,
+        "private comment report",
+      );
+    },
   );
 }
 
 export async function notifySeriesRemovalRequestCreated(
   input: Parameters<typeof buildSeriesRemovalRequestDiscordPayload>[0],
 ) {
-  const payload = await buildSeriesRemovalRequestDiscordPayload(input);
-  const env = getEnv();
+  const dashboardUrl = await buildAbsoluteUrl("/dashboard/removal-requests");
 
-  await sendWebhookSafely(
-    env.DISCORD_PRIVATE_WEBHOOK_URL || null,
-    payload,
-    "private series removal request",
+  await sendBotEvent(
+    "copyright.reported",
+    (await getOrCreateDiscordIntegrationConfig()).copyrightReportedEnabled,
+    {
+      seriesTitle: input.seriesTitle,
+      claimantName: input.claimantName,
+      dashboardUrl,
+    },
+    async () => {
+      const payload = await buildSeriesRemovalRequestDiscordPayload(input);
+      const env = getEnv();
+      await sendWebhookSafely(
+        env.DISCORD_PRIVATE_WEBHOOK_URL || null,
+        payload,
+        "private series removal request",
+      );
+    },
   );
 }

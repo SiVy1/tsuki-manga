@@ -4,6 +4,7 @@ import { AssetKind, AssetScope } from "@/generated/prisma/client";
 
 import { prisma } from "@/app/_lib/db/client";
 import { assertSeriesSlugAvailable } from "@/app/_lib/db/slugs";
+import { notifySeriesCreated } from "@/app/_lib/notifications/discord";
 import { requireAdmin, requirePermission } from "@/app/_lib/auth/session";
 import { PermissionBits } from "@/app/_lib/permissions/bits";
 import { isUsableUploadFile, parseUploadedImage } from "@/app/_lib/storage/images";
@@ -70,6 +71,37 @@ export async function createSeriesAction(rawInput: unknown) {
         : undefined,
     },
   });
+
+  const createdSeries = await prisma.series.findUnique({
+    where: {
+      id: series.id,
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      descriptionShort: true,
+      visibility: true,
+      coverAsset: {
+        select: {
+          storageKey: true,
+        },
+      },
+    },
+  });
+
+  if (createdSeries) {
+    await notifySeriesCreated({
+      seriesId: createdSeries.id,
+      title: createdSeries.title,
+      slug: createdSeries.slug,
+      descriptionShort: createdSeries.descriptionShort,
+      coverUrl: createdSeries.coverAsset
+        ? storageDriver.getPublicUrl(createdSeries.coverAsset.storageKey)
+        : null,
+      visibility: createdSeries.visibility,
+    });
+  }
 
   return ok({
     id: series.id,

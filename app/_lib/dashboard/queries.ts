@@ -437,6 +437,29 @@ export async function getDashboardUsersData() {
   }));
 }
 
+export async function getDashboardDiscordData(userId: string) {
+  const { getOrCreateDiscordIntegrationConfig, resolveDiscordManagerStatus } = await import(
+    "@/app/_lib/discord/integration"
+  );
+
+  const [config, managerStatus, deliveryLogs] = await Promise.all([
+    getOrCreateDiscordIntegrationConfig(),
+    resolveDiscordManagerStatus(userId),
+    prisma.discordDeliveryLog.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 10,
+    }),
+  ]);
+
+  return {
+    config,
+    managerStatus,
+    deliveryLogs,
+  };
+}
+
 export async function getDeletedSeriesData() {
   const deletedSeries = await prisma.series.findMany({
     where: {

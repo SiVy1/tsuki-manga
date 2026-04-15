@@ -1,0 +1,643 @@
+import http from "node:http";
+
+import {
+  ActionRowBuilder,
+  Client,
+  EmbedBuilder,
+  GatewayIntentBits,
+  REST,
+  Routes,
+  SlashCommandBuilder,
+  StringSelectMenuBuilder,
+} from "discord.js";
+
+const env = {
+  token: process.env.DISCORD_BOT_TOKEN ?? "",
+  clientId: process.env.DISCORD_BOT_CLIENT_ID ?? "",
+  port: Number(process.env.DISCORD_BOT_PORT ?? "3001"),
+  internalSecret: process.env.DISCORD_BOT_INTERNAL_SECRET ?? "",
+};
+
+if (!env.token || !env.clientId || !env.internalSecret) {
+  throw new Error("Missing Discord bot environment configuration.");
+}
+
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+});
+
+const commands = [
+  new SlashCommandBuilder()
+    .setName("subscriptions")
+    .setDescription("Show current Tsuki Manga subscription roles."),
+  new SlashCommandBuilder().setName("bot-help").setDescription("Show bot usage help."),
+].map((command) => command.toJSON());
+
+const messages = {
+  en: {
+    helpTitle: "Tsuki Manga bot",
+    helpDescription:
+      "Use the subscription channel menu to opt in or out of series notifications.",
+    subscriptionsNone: "You do not have any Tsuki series roles yet.",
+    subscriptionsTitle: "Your series subscriptions",
+    menuPlaceholder: "Choose series notifications",
+    menuSaved: "Series subscriptions updated.",
+    chapterPublished: "New chapter published",
+    newSeries: "New series added",
+    commentReported: "Comment reported",
+    copyrightReported: "Copyright report received",
+    openChapter: "Open chapter",
+    openSeries: "Open series",
+    openDashboard: "Open dashboard",
+    reason: "Reason",
+    claimant: "Claimant",
+    series: "Series",
+    chapter: "Chapter",
+    testTitle: "Discord bot test",
+    testDescription: "Dashboard -> bot connection works.",
+  },
+  pl: {
+    helpTitle: "Bot Tsuki Manga",
+    helpDescription:
+      "Uzyj menu na kanale subskrypcji, aby wlaczyc lub wylaczyc powiadomienia o seriach.",
+    subscriptionsNone: "Nie masz jeszcze zadnych rol serii Tsuki.",
+    subscriptionsTitle: "Twoje subskrypcje serii",
+    menuPlaceholder: "Wybierz powiadomienia o seriach",
+    menuSaved: "Zaktualizowano subskrypcje serii.",
+    chapterPublished: "Opublikowano nowy rozdzial",
+    newSeries: "Dodano nowa serie",
+    commentReported: "Zgloszono komentarz",
+    copyrightReported: "Otrzymano zgloszenie praw autorskich",
+    openChapter: "Otworz rozdzial",
+    openSeries: "Otworz serie",
+    openDashboard: "Otworz panel",
+    reason: "Powod",
+    claimant: "Zglaszajacy",
+    series: "Seria",
+    chapter: "Rozdzial",
+    testTitle: "Test bota Discord",
+    testDescription: "Polaczenie dashboard -> bot dziala.",
+  },
+};
+
+function t(locale, key) {
+  const safeLocale = locale === "pl" ? "pl" : "en";
+  return messages[safeLocale][key] ?? messages.en[key] ?? key;
+}
+
+function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let raw = "";
+    req.on("data", (chunk) => {
+      raw += chunk;
+    });
+    req.on("end", () => {
+      if (!raw) {
+        resolve({});
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(raw));
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function sendJson(res, status, body) {
+  res.writeHead(status, {
+    "Content-Type": "application/json",
+  });
+  res.end(JSON.stringify(body));
+}
+
+function requireAuth(req, res) {
+  const header = req.headers.authorization ?? "";
+
+  if (header !== `Bearer ${env.internalSecret}`) {
+    sendJson(res, 401, { error: "Unauthorized" });
+    return false;
+  }
+
+  return true;
+}
+
+function buildManagedRoleName(rolePrefix, seriesId, title) {
+  const suffix = String(title ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
+  return `${rolePrefix}:${seriesId}:${suffix || "series"}`.slice(0, 100);
+}
+
+function findSeriesRole(guild, rolePrefix, seriesId) {
+  return guild.roles.cache.find((role) => role.name.startsWith(`${rolePrefix}:${seriesId}:`)) ?? null;
+}
+
+async function ensureSeriesRole(guild, rolePrefix, series) {
+  const existing = findSeriesRole(guild, rolePrefix, series.id);
+  const nextName = buildManagedRoleName(rolePrefix, series.id, series.title);
+
+  if (!existing) {
+    return guild.roles.create({
+      name: nextName,
+      mentionable: true,
+      reason: "Tsuki Manga series subscription role",
+    });
+  }
+
+  if (existing.name !== nextName) {
+    await existing.edit({
+      name: nextName,
+      reason: "Tsuki Manga series title sync",
+    });
+  }
+
+  return existing;
+}
+
+async function syncSeriesRoles(guild, rolePrefix, publicSeries) {
+  for (const series of publicSeries) {
+    await ensureSeriesRole(guild, rolePrefix, series);
+  }
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
+async function publishSubscriptionMenu({
+  guild,
+  locale,
+  rolePrefix,
+  channelId,
+  publicSeries,
+  existingMessageIds = [],
+}) {
+  const channel = await guild.channels.fetch(channelId);
+
+  if (!channel?.isTextBased()) {
+    throw new Error("Subscription channel is not a text channel.");
+  }
+
+  for (const messageId of existingMessageIds) {
+    try {
+      const existing = await channel.messages.fetch(messageId);
+      await existing.delete();
+    } catch {
+      // Ignore missing old messages.
+    }
+  }
+
+  const chunks = chunkArray(publicSeries, 25);
+  const messageIds = [];
+
+  for (const [index, chunk] of chunks.entries()) {
+    const options = chunk.map((series) => ({
+      label: series.title.slice(0, 100),
+      value: `${rolePrefix}:${series.id}`,
+      description: series.slug.slice(0, 100),
+    }));
+
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId(`tsuki-subscribe:${index}`)
+      .setPlaceholder(t(locale, "menuPlaceholder"))
+      .setMinValues(0)
+      .setMaxValues(options.length)
+      .addOptions(options);
+
+    const row = new ActionRowBuilder().addComponents(menu);
+    const message = await channel.send({
+      content:
+        chunks.length > 1
+          ? `${t(locale, "menuPlaceholder")} (${index + 1}/${chunks.length})`
+          : t(locale, "menuPlaceholder"),
+      components: [row],
+    });
+
+    messageIds.push(message.id);
+  }
+
+  return messageIds;
+}
+
+async function registerGuildCommands(guildId) {
+  const rest = new REST({ version: "10" }).setToken(env.token);
+  await rest.put(Routes.applicationGuildCommands(env.clientId, guildId), {
+    body: commands,
+  });
+}
+
+client.once("ready", () => {
+  console.log(`Discord bot ready as ${client.user?.tag ?? "unknown"}`);
+});
+
+client.on("interactionCreate", async (interaction) => {
+  try {
+    if (interaction.isChatInputCommand()) {
+      if (interaction.commandName === "subscriptions") {
+        const member = await interaction.guild?.members.fetch(interaction.user.id);
+
+        if (!member) {
+          await interaction.reply({
+            ephemeral: true,
+            content: "Guild membership required.",
+          });
+          return;
+        }
+
+        const managedRoles = member.roles.cache
+          .filter((role) => /^[^:]+:[^:]+:/.test(role.name))
+          .map((role) => role.name.split(":").slice(2).join(":"))
+          .filter(Boolean);
+
+        await interaction.reply({
+          ephemeral: true,
+          content: managedRoles.length
+            ? `${t("en", "subscriptionsTitle")}: ${managedRoles.join(", ")}`
+            : t("en", "subscriptionsNone"),
+        });
+        return;
+      }
+
+      if (interaction.commandName === "bot-help") {
+        await interaction.reply({
+          ephemeral: true,
+          embeds: [
+            new EmbedBuilder()
+              .setTitle(t("en", "helpTitle"))
+              .setDescription(t("en", "helpDescription")),
+          ],
+        });
+        return;
+      }
+    }
+
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith("tsuki-subscribe:")) {
+      const guild = interaction.guild;
+      const member = interaction.member;
+
+      if (!guild || !member || !("roles" in member)) {
+        await interaction.reply({ ephemeral: true, content: "Guild membership required." });
+        return;
+      }
+
+      const optionSeriesIds = interaction.component.options.map((option) => option.value);
+      const selectedSeriesIds = new Set(interaction.values);
+      const roleIdsToRemove = [];
+      const roleIdsToAdd = [];
+
+      for (const optionValue of optionSeriesIds) {
+        const [rolePrefix, seriesId] = optionValue.split(":");
+        const role = findSeriesRole(guild, rolePrefix, seriesId);
+
+        if (!role) {
+          continue;
+        }
+
+        if (selectedSeriesIds.has(optionValue)) {
+          if (!member.roles.cache.has(role.id)) {
+            roleIdsToAdd.push(role.id);
+          }
+        } else if (member.roles.cache.has(role.id)) {
+          roleIdsToRemove.push(role.id);
+        }
+      }
+
+      if (roleIdsToAdd.length) {
+        await member.roles.add(roleIdsToAdd, "Tsuki Manga series subscription update");
+      }
+
+      if (roleIdsToRemove.length) {
+        await member.roles.remove(roleIdsToRemove, "Tsuki Manga series subscription update");
+      }
+
+      await interaction.reply({
+        ephemeral: true,
+        content: t("en", "menuSaved"),
+      });
+    }
+  } catch (error) {
+    console.error("Discord interaction failed.", error);
+
+    if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        ephemeral: true,
+        content: "Discord action failed.",
+      }).catch(() => undefined);
+    }
+  }
+});
+
+async function handleVerify(body, res) {
+  const guild = await client.guilds.fetch(body.guildId);
+  const member = await guild.members.fetch(body.discordUserId).catch(() => null);
+
+  if (!member) {
+    sendJson(res, 200, {
+      guildMembership: false,
+      managerRoleMatched: false,
+      matchedRoleIds: [],
+    });
+    return;
+  }
+
+  const allowedRoleIds = Array.isArray(body.allowedManagerRoleIds)
+    ? body.allowedManagerRoleIds.filter(Boolean)
+    : [];
+  const matchedRoleIds = allowedRoleIds.filter((roleId) => member.roles.cache.has(roleId));
+
+  sendJson(res, 200, {
+    guildMembership: true,
+    managerRoleMatched: allowedRoleIds.length === 0 || matchedRoleIds.length > 0,
+    matchedRoleIds,
+  });
+}
+
+async function handleAdminAction(body, res) {
+  const guild = await client.guilds.fetch(body.guildId);
+  await registerGuildCommands(guild.id);
+
+  if (body.action === "verify-manager-access") {
+    sendJson(res, 200, { ok: true, message: "Manager access verified." });
+    return;
+  }
+
+  if (body.action === "sync-series-roles") {
+    await syncSeriesRoles(guild, body.rolePrefix, body.publicSeries ?? []);
+    sendJson(res, 200, { ok: true, message: "Series roles synced." });
+    return;
+  }
+
+  if (body.action === "publish-subscription-menu" || body.action === "refresh-subscription-menu") {
+    if (!body.channels?.subscriptionChannelId) {
+      throw new Error("Subscription channel ID is missing.");
+    }
+
+    await syncSeriesRoles(guild, body.rolePrefix, body.publicSeries ?? []);
+    const subscriptionMessageIds = await publishSubscriptionMenu({
+      guild,
+      locale: body.defaultLocale,
+      rolePrefix: body.rolePrefix,
+      channelId: body.channels.subscriptionChannelId,
+      publicSeries: body.publicSeries ?? [],
+      existingMessageIds: body.subscriptionMessageIds ?? [],
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      message:
+        body.action === "publish-subscription-menu"
+          ? "Subscription menu published."
+          : "Subscription menu refreshed.",
+      subscriptionMessageIds,
+    });
+    return;
+  }
+
+  if (body.action === "send-test-notification") {
+    const channelId = body.channels?.announcementChannelId ?? body.channels?.moderationChannelId;
+
+    if (!channelId) {
+      throw new Error("No configured test target channel.");
+    }
+
+    const channel = await guild.channels.fetch(channelId);
+
+    if (!channel?.isTextBased()) {
+      throw new Error("Configured test target is not a text channel.");
+    }
+
+    const message = await channel.send({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(t(body.defaultLocale, "testTitle"))
+          .setDescription(t(body.defaultLocale, "testDescription")),
+      ],
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      message: "Test notification sent.",
+      targetChannelId: channel.id,
+      targetMessageId: message.id,
+    });
+    return;
+  }
+
+  throw new Error("Unsupported admin action.");
+}
+
+async function handleEvent(body, res) {
+  const guild = await client.guilds.fetch(body.config.guildId);
+  const locale = body.config.defaultLocale === "pl" ? "pl" : "en";
+  const rolePrefix = body.config.rolePrefix;
+
+  if (body.eventType === "chapter.published") {
+    const channelId = body.config.announcementChannelId;
+
+    if (!channelId) {
+      throw new Error("Announcement channel is not configured.");
+    }
+
+    const channel = await guild.channels.fetch(channelId);
+    if (!channel?.isTextBased()) {
+      throw new Error("Announcement channel is not a text channel.");
+    }
+
+    const role = body.data.seriesId ? findSeriesRole(guild, rolePrefix, body.data.seriesId) : null;
+    const embed = new EmbedBuilder()
+      .setTitle(body.data.seriesTitle)
+      .setURL(body.data.chapterUrl)
+      .setDescription(
+        [t(locale, "chapterPublished"), `${body.data.chapterNumber}${body.data.chapterLabel ? ` ${body.data.chapterLabel}` : ""}`, body.data.chapterTitle]
+          .filter(Boolean)
+          .join("\n"),
+      )
+      .setTimestamp(new Date(body.data.publishedAt));
+
+    if (body.data.coverUrl) {
+      embed.setImage(body.data.coverUrl);
+    }
+
+    const message = await channel.send({
+      content: role ? `<@&${role.id}>` : undefined,
+      embeds: [embed],
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      targetChannelId: channel.id,
+      targetMessageId: message.id,
+    });
+    return;
+  }
+
+  if (body.eventType === "series.created") {
+    const channelId = body.config.newSeriesChannelId || body.config.announcementChannelId;
+
+    if (!channelId) {
+      throw new Error("No channel configured for series notifications.");
+    }
+
+    const channel = await guild.channels.fetch(channelId);
+    if (!channel?.isTextBased()) {
+      throw new Error("Series notification channel is not a text channel.");
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle(t(locale, "newSeries"))
+      .setDescription(body.data.title)
+      .setURL(body.data.url)
+      .addFields(
+        {
+          name: t(locale, "openSeries"),
+          value: body.data.url,
+        },
+        ...(body.data.description ? [{ name: "Info", value: body.data.description.slice(0, 1024) }] : []),
+      );
+
+    if (body.data.coverUrl) {
+      embed.setImage(body.data.coverUrl);
+    }
+
+    const message = await channel.send({
+      embeds: [embed],
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      targetChannelId: channel.id,
+      targetMessageId: message.id,
+    });
+    return;
+  }
+
+  if (body.eventType === "comment.reported") {
+    const channelId = body.config.moderationChannelId;
+
+    if (!channelId) {
+      throw new Error("Moderation channel is not configured.");
+    }
+
+    const channel = await guild.channels.fetch(channelId);
+    if (!channel?.isTextBased()) {
+      throw new Error("Moderation channel is not a text channel.");
+    }
+
+    const content = body.config.staffAlertRoleId ? `<@&${body.config.staffAlertRoleId}>` : undefined;
+    const message = await channel.send({
+      content,
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(t(locale, "commentReported"))
+          .addFields(
+            { name: t(locale, "series"), value: body.data.seriesTitle, inline: true },
+            {
+              name: t(locale, "chapter"),
+              value: `${body.data.chapterNumber}${body.data.chapterLabel ? ` ${body.data.chapterLabel}` : ""}`,
+              inline: true,
+            },
+            { name: t(locale, "reason"), value: body.data.reasonLabel, inline: true },
+            { name: t(locale, "openChapter"), value: body.data.chapterUrl },
+            { name: t(locale, "openDashboard"), value: body.data.dashboardUrl },
+          )
+          .setTimestamp(new Date(body.occurredAt)),
+      ],
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      targetChannelId: channel.id,
+      targetMessageId: message.id,
+    });
+    return;
+  }
+
+  if (body.eventType === "copyright.reported") {
+    const channelId = body.config.moderationChannelId;
+
+    if (!channelId) {
+      throw new Error("Moderation channel is not configured.");
+    }
+
+    const channel = await guild.channels.fetch(channelId);
+    if (!channel?.isTextBased()) {
+      throw new Error("Moderation channel is not a text channel.");
+    }
+
+    const content = body.config.staffAlertRoleId ? `<@&${body.config.staffAlertRoleId}>` : undefined;
+    const message = await channel.send({
+      content,
+      embeds: [
+        new EmbedBuilder()
+          .setTitle(t(locale, "copyrightReported"))
+          .addFields(
+            { name: t(locale, "series"), value: body.data.seriesTitle, inline: true },
+            { name: t(locale, "claimant"), value: body.data.claimantName, inline: true },
+            { name: t(locale, "openDashboard"), value: body.data.dashboardUrl },
+          )
+          .setTimestamp(new Date(body.occurredAt)),
+      ],
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      targetChannelId: channel.id,
+      targetMessageId: message.id,
+    });
+    return;
+  }
+
+  throw new Error("Unsupported event type.");
+}
+
+const server = http.createServer(async (req, res) => {
+  try {
+    if (req.method === "GET" && req.url === "/health") {
+      sendJson(res, 200, { ok: true, ready: client.isReady() });
+      return;
+    }
+
+    if (!requireAuth(req, res)) {
+      return;
+    }
+
+    const body = await parseJsonBody(req);
+
+    if (req.method === "POST" && req.url === "/internal/admin/verify") {
+      await handleVerify(body, res);
+      return;
+    }
+
+    if (req.method === "POST" && req.url === "/internal/admin/action") {
+      await handleAdminAction(body, res);
+      return;
+    }
+
+    if (req.method === "POST" && req.url === "/internal/events") {
+      await handleEvent(body, res);
+      return;
+    }
+
+    sendJson(res, 404, { error: "Not found" });
+  } catch (error) {
+    console.error("Discord bot server error.", error);
+    sendJson(res, 500, {
+      error: error instanceof Error ? error.message : "Discord bot server error.",
+    });
+  }
+});
+
+await client.login(env.token);
+
+server.listen(env.port, () => {
+  console.log(`Discord bot internal server listening on ${env.port}`);
+});

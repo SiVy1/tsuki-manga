@@ -29,6 +29,7 @@ export default async function DashboardLayout({
           { href: "/dashboard/removal-requests", label: "Removal requests", icon: "legal" as const },
         ]
       : []),
+    { href: "/dashboard/discord", label: "Discord", icon: "discord" as const },
     { href: "/dashboard/settings", label: "Settings", icon: "settings" as const },
     { href: "/dashboard/users", label: "Users", icon: "users" as const },
   ];

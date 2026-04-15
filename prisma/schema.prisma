@@ -70,6 +70,12 @@ enum SeriesRemovalRequestStatus {
   RESOLVED_REJECTED
 }
 
+enum DiscordDeliveryStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
 model User {
   id                    String         @id @default(uuid()) @db.Uuid
   name                  String?
@@ -150,6 +156,7 @@ model InstanceSettings {
   logoAsset        Asset?       @relation("InstanceLogoAsset", fields: [logoAssetId], references: [id], onDelete: SetNull)
   faviconAsset     Asset?       @relation("InstanceFaviconAsset", fields: [faviconAssetId], references: [id], onDelete: SetNull)
   socialLinks      SocialLink[]
+  discordConfig    DiscordIntegrationConfig?
 }
 
 model SocialLink {
@@ -403,4 +410,46 @@ model SeriesRemovalRequest {
   @@index([claimantEmail, createdAt])
   @@index([status, createdAt])
   @@index([reporterIpHash, createdAt])
+}
+
+model DiscordIntegrationConfig {
+  id                       String                @id @default(uuid()) @db.Uuid
+  instanceSettingsId       String                @unique @db.Uuid
+  guildId                  String
+  defaultLocale            String                @default("en")
+  announcementChannelId    String?
+  subscriptionChannelId    String?
+  moderationChannelId      String?
+  newSeriesChannelId       String?
+  staffAlertRoleId         String?
+  allowedManagerRoleIds    String[]
+  subscriptionMessageIds   String[]
+  chapterPublishedEnabled  Boolean               @default(true)
+  seriesCreatedEnabled     Boolean               @default(true)
+  commentReportedEnabled   Boolean               @default(true)
+  copyrightReportedEnabled Boolean               @default(true)
+  rolePrefix               String                @default("tsuki-series")
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+
+  instanceSettings         InstanceSettings      @relation(fields: [instanceSettingsId], references: [id], onDelete: Cascade)
+  deliveryLogs             DiscordDeliveryLog[]
+}
+
+model DiscordDeliveryLog {
+  id                 String                 @id @default(uuid()) @db.Uuid
+  discordConfigId    String                 @db.Uuid
+  eventId            String                 @unique
+  eventType          String
+  status             DiscordDeliveryStatus
+  message            String?
+  targetChannelId    String?
+  targetMessageId    String?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  discordConfig      DiscordIntegrationConfig @relation(fields: [discordConfigId], references: [id], onDelete: Cascade)
+
+  @@index([discordConfigId, createdAt])
+  @@index([status, createdAt])
 }

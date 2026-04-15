@@ -5,6 +5,7 @@ type DashboardIconName =
   | "comments"
   | "legal"
   | "settings"
+  | "discord"
   | "users"
   | "trash"
   | "home";
@@ -71,6 +72,17 @@ export function DashboardIcon({ name, className }: DashboardIconProps) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className={classes}>
           <path d="M10.5 4h3l.7 2.1a6.8 6.8 0 0 1 1.7.7L18 5.7l2.1 2.1-1.1 2.1c.3.6.5 1.1.7 1.7l2.1.7v3l-2.1.7a6.8 6.8 0 0 1-.7 1.7l1.1 2.1-2.1 2.1-2.1-1.1a6.8 6.8 0 0 1-1.7.7L13.5 22h-3l-.7-2.1a6.8 6.8 0 0 1-1.7-.7L6 20.3l-2.1-2.1L5 16.1a6.8 6.8 0 0 1-.7-1.7L2.2 13.7v-3l2.1-.7c.2-.6.4-1.1.7-1.7L3.9 6.2 6 4.1l2.1 1.1c.6-.3 1.1-.5 1.7-.7z" />
           <circle cx="12" cy="12" r="3.2" />
+        </svg>
+      );
+    case "discord":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className={classes}>
+          <path d="M8.5 7.5a11 11 0 0 1 7 0" />
+          <path d="M7 17c1.8 1.2 3.4 1.8 5 1.8s3.2-.6 5-1.8" />
+          <path d="M8 7 6 10.5v5.5L8.8 18" />
+          <path d="M16 7l2 3.5V16L15.2 18" />
+          <circle cx="9.5" cy="12.5" r="1" fill="currentColor" stroke="none" />
+          <circle cx="14.5" cy="12.5" r="1" fill="currentColor" stroke="none" />
         </svg>
       );
     case "users":

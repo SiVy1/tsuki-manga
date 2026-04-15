@@ -10,12 +10,42 @@ import {
 } from "@/app/_lib/notifications/discord";
 
 const envState = {
+  DISCORD_BOT_INTERNAL_URL: "",
+  DISCORD_BOT_INTERNAL_SECRET: "",
   DISCORD_PUBLIC_WEBHOOK_URL: "",
   DISCORD_PRIVATE_WEBHOOK_URL: "",
 };
 
+const deliveryLogCreate = vi.fn();
+
 vi.mock("@/app/_lib/settings/env", () => ({
   getEnv: vi.fn(() => envState),
+}));
+
+vi.mock("@/app/_lib/discord/integration", () => ({
+  getOrCreateDiscordIntegrationConfig: vi.fn(async () => ({
+    id: "discord-config-1",
+    guildId: "",
+    defaultLocale: "en",
+    announcementChannelId: null,
+    subscriptionChannelId: null,
+    moderationChannelId: null,
+    newSeriesChannelId: null,
+    staffAlertRoleId: null,
+    chapterPublishedEnabled: true,
+    seriesCreatedEnabled: true,
+    commentReportedEnabled: true,
+    copyrightReportedEnabled: true,
+    rolePrefix: "tsuki-series",
+  })),
+}));
+
+vi.mock("@/app/_lib/db/client", () => ({
+  prisma: {
+    discordDeliveryLog: {
+      create: deliveryLogCreate,
+    },
+  },
 }));
 
 vi.mock("@/app/_lib/seo/public-url", () => ({
@@ -27,11 +57,15 @@ describe("discord notifications", () => {
 
   beforeEach(() => {
     fetchMock.mockReset();
+    deliveryLogCreate.mockReset();
+    deliveryLogCreate.mockResolvedValue({});
     fetchMock.mockResolvedValue({
       ok: true,
       status: 204,
     });
     vi.stubGlobal("fetch", fetchMock);
+    envState.DISCORD_BOT_INTERNAL_URL = "";
+    envState.DISCORD_BOT_INTERNAL_SECRET = "";
     envState.DISCORD_PUBLIC_WEBHOOK_URL = "";
     envState.DISCORD_PRIVATE_WEBHOOK_URL = "";
   });
@@ -49,7 +83,6 @@ describe("discord notifications", () => {
       chapterNumber: "12",
       chapterLabel: "special",
       chapterTitle: "Arrival",
-      publishedByName: "Seweryn",
     });
 
     expect(payload.username).toBe("Tsuki Manga Releases");

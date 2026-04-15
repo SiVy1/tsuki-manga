@@ -735,7 +735,7 @@ export async function replaceChapterPageRedirectAction(
 }
 
 export async function publishChapterAction(rawInput: unknown) {
-  const user = await requirePermission(PermissionBits.PUBLISH);
+  await requirePermission(PermissionBits.PUBLISH);
   const parsed = publishChapterInputSchema.safeParse(rawInput);
 
   if (!parsed.success) {
@@ -795,6 +795,8 @@ export async function publishChapterAction(rawInput: unknown) {
       publishedAt: true,
       series: {
         select: {
+          id: true,
+          slug: true,
           title: true,
           coverAsset: {
             select: {
@@ -808,6 +810,8 @@ export async function publishChapterAction(rawInput: unknown) {
 
   if (publishedChapter) {
     await notifyChapterPublished({
+      seriesId: publishedChapter.series.id,
+      seriesSlug: publishedChapter.series.slug,
       seriesTitle: publishedChapter.series.title,
       seriesCoverUrl: publishedChapter.series.coverAsset
         ? storageDriver.getPublicUrl(publishedChapter.series.coverAsset.storageKey)
@@ -818,7 +822,6 @@ export async function publishChapterAction(rawInput: unknown) {
       chapterLabel: publishedChapter.label,
       chapterTitle: publishedChapter.title,
       publishedAt: publishedChapter.publishedAt,
-      publishedByName: user.displayName ?? user.name ?? null,
     });
   }
 

@@ -12,20 +12,43 @@ services:
       S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
       S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      DISCORD_BOT_INTERNAL_URL: ${DISCORD_BOT_INTERNAL_URL}
+      DISCORD_BOT_INTERNAL_SECRET: ${DISCORD_BOT_INTERNAL_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
+      discord-bot:
+        condition: service_started
     ports:
       - "127.0.0.1:${APP_PORT:-3002}:3000"
     volumes:
       - ./public/media:/app/public/media
       - ./.storage/draft:/app/.storage/draft
+      - ./content:/app/content
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))\""]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  discord-bot:
+    build:
+      context: ./services/discord-bot
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_BOT_CLIENT_ID: ${DISCORD_BOT_CLIENT_ID}
+      DISCORD_BOT_PORT: ${DISCORD_BOT_PORT:-3001}
+      DISCORD_BOT_INTERNAL_SECRET: ${DISCORD_BOT_INTERNAL_SECRET}
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:${DISCORD_BOT_PORT:-3001}/health').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   postgres:
     image: postgres:17-alpine
