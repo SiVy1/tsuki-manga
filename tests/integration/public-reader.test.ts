@@ -38,6 +38,7 @@ describe("public backend read layer", () => {
     const series = await prisma.series.create({
       data: {
         title: "Visible Series",
+        altTitles: ["Hidden Title", "Secret Name"],
         slug: "visible-series",
         visibility: SeriesVisibility.PUBLIC,
         createdById: testUsers.editor.id,
@@ -97,6 +98,7 @@ describe("public backend read layer", () => {
     expect(homeData.latestChapters[0]?.series.slug).toBe("visible-series");
     expect(catalogData.series).toHaveLength(1);
     expect(catalogData.series[0]?.coverUrl).toBe("/media/series-cover/demo.png");
+    expect(catalogData.series[0]?.altTitles).toEqual(["Hidden Title", "Secret Name"]);
   });
 
   it("resolves slug history redirects for public series and chapters", async () => {

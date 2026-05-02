@@ -19,6 +19,7 @@ import {
   createSeriesAction,
   restoreSeriesAction,
   softDeleteSeriesAction,
+  updateSeriesAction,
 } from "@/app/_actions/series/actions";
 import { prisma } from "@/app/_lib/db/client";
 import { getDashboardChapterPreviewData } from "@/app/_lib/dashboard/queries";
@@ -54,6 +55,7 @@ describe("series and chapter backend flow", () => {
   it("creates series and chapters, uploads pages, publishes and unpublishes", async () => {
     const seriesResult = await createSeriesAction({
       title: "Tsuki no Yoru",
+      altTitles: ["Moon Night", "月の夜"],
     });
 
     expect(seriesResult.success).toBe(true);
@@ -61,6 +63,12 @@ describe("series and chapter backend flow", () => {
     if (!seriesResult.success) {
       throw new Error("series creation failed");
     }
+
+    const createdSeries = await prisma.series.findUnique({
+      where: { id: seriesResult.data.id },
+    });
+
+    expect(createdSeries?.altTitles).toEqual(["Moon Night", "月の夜"]);
 
     const chapterResult = await createChapterAction({
       seriesId: seriesResult.data.id,
@@ -422,5 +430,50 @@ describe("series and chapter backend flow", () => {
     expect(restoredSeries?.visibility).toBe("HIDDEN");
     expect(restoredChapter?.deletedAt).toBeNull();
     expect(restoredChapter?.status).toBe("DRAFT");
+  });
+
+  it("creates and updates series alt titles", async () => {
+    const seriesResult = await createSeriesAction({
+      title: "Alt Titles Series",
+      altTitles: ["First Alt", "Second Alt"],
+    });
+
+    expect(seriesResult.success).toBe(true);
+    if (!seriesResult.success) throw new Error("series creation failed");
+
+    const createdSeries = await prisma.series.findUnique({
+      where: { id: seriesResult.data.id },
+    });
+    expect(createdSeries?.altTitles).toEqual(["First Alt", "Second Alt"]);
+
+    const updateResult = await updateSeriesAction({
+      id: seriesResult.data.id,
+      title: "Alt Titles Series",
+      altTitles: ["Updated Alt", "New Alt", "Third Alt"],
+      visibility: "PUBLIC",
+      taxonomyTermIds: [],
+    });
+
+    expect(updateResult.success).toBe(true);
+
+    const updatedSeries = await prisma.series.findUnique({
+      where: { id: seriesResult.data.id },
+    });
+    expect(updatedSeries?.altTitles).toEqual(["Updated Alt", "New Alt", "Third Alt"]);
+
+    const emptiedResult = await updateSeriesAction({
+      id: seriesResult.data.id,
+      title: "Alt Titles Series",
+      altTitles: [],
+      visibility: "PUBLIC",
+      taxonomyTermIds: [],
+    });
+
+    expect(emptiedResult.success).toBe(true);
+
+    const emptiedSeries = await prisma.series.findUnique({
+      where: { id: seriesResult.data.id },
+    });
+    expect(emptiedSeries?.altTitles).toEqual([]);
   });
 });

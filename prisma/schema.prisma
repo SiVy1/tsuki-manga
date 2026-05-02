@@ -186,6 +186,7 @@ model TaxonomyTerm {
 model Series {
   id               String           @id @default(uuid()) @db.Uuid
   title            String
+  altTitles        String[]         @default([])
   slug             String           @unique
   descriptionShort String?
   descriptionLong  String?

@@ -174,6 +174,7 @@ export async function getSeriesCatalogData() {
     series: seriesList.map((series) => ({
       descriptionShort: series.descriptionShort,
       taxonomyTerms: series.taxonomyTerms.map((term) => term.name),
+      altTitles: series.altTitles,
       ...mapSeriesCardData(series),
     })),
   };
@@ -251,6 +252,7 @@ export async function resolveSeriesBySlug(slug: string) {
       series: {
         id: directMatch.id,
         title: directMatch.title,
+        altTitles: directMatch.altTitles,
         slug: directMatch.slug,
         descriptionShort: directMatch.descriptionShort,
         descriptionLong: directMatch.descriptionLong,

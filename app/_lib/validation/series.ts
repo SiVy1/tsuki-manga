@@ -5,6 +5,7 @@ import { nullableTrimmedString, uuidSchema } from "@/app/_lib/validation/shared"
 
 export const createSeriesInputSchema = z.object({
   title: z.string().trim().min(1).max(180),
+  altTitles: z.array(z.string().trim().min(1).max(180)).default([]),
   slug: z.string().trim().optional(),
   descriptionShort: nullableTrimmedString,
   descriptionLong: nullableTrimmedString,

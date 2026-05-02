@@ -24,6 +24,12 @@ export default async function DashboardNewSeriesPage({ searchParams }: PageProps
 
     const result = await createSeriesAction({
       title: formData.get("title")?.toString() ?? "",
+      altTitles: formData
+        .get("altTitles")
+        ?.toString()
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean) ?? [],
       slug: formData.get("slug")?.toString() ?? "",
       descriptionShort: formData.get("descriptionShort")?.toString() ?? "",
       descriptionLong: formData.get("descriptionLong")?.toString() ?? "",
@@ -82,6 +88,20 @@ export default async function DashboardNewSeriesPage({ searchParams }: PageProps
                 className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
               />
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="altTitles" className="text-sm font-medium">
+              Alternative titles
+            </label>
+            <textarea
+              id="altTitles"
+              name="altTitles"
+              rows={2}
+              placeholder="One Piece, ワンピース"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-foreground/30"
+            />
+            <p className="text-xs text-muted">Enter comma-separated alternative titles.</p>
           </div>
 
           <div className="space-y-1">

@@ -57,6 +57,7 @@ export async function createSeriesAction(rawInput: unknown) {
   const series = await prisma.series.create({
     data: {
       title: parsed.data.title,
+      altTitles: parsed.data.altTitles,
       slug,
       descriptionShort: parsed.data.descriptionShort,
       descriptionLong: parsed.data.descriptionLong,
@@ -152,6 +153,7 @@ export async function updateSeriesAction(rawInput: unknown) {
       where: { id: existingSeries.id },
       data: {
         title: parsed.data.title,
+        altTitles: parsed.data.altTitles,
         slug: nextSlug,
         descriptionShort: parsed.data.descriptionShort,
         descriptionLong: parsed.data.descriptionLong,

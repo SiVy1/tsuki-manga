@@ -11,6 +11,7 @@ import {
 type CatalogSeries = PublicSeriesCardData & {
   descriptionShort: string | null;
   taxonomyTerms: string[];
+  altTitles: string[];
 };
 
 type SeriesCatalogBrowserProps = {
@@ -36,7 +37,8 @@ export function SeriesCatalogBrowser({ series }: SeriesCatalogBrowserProps) {
       normalizedQuery.length === 0 ||
       entry.title.toLowerCase().includes(normalizedQuery) ||
       (entry.descriptionShort ?? "").toLowerCase().includes(normalizedQuery) ||
-      entry.taxonomyTerms.some((term) => term.toLowerCase().includes(normalizedQuery));
+      entry.taxonomyTerms.some((term) => term.toLowerCase().includes(normalizedQuery)) ||
+      entry.altTitles.some((altTitle) => altTitle.toLowerCase().includes(normalizedQuery));
 
     const matchesTerm = !activeTerm || entry.taxonomyTerms.includes(activeTerm);
 

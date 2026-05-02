@@ -155,7 +155,7 @@ function requireAuth(req, res) {
   return true;
 }
 
-function buildManagedRoleName(rolePrefix, seriesId, title) {
+function buildManagedRoleName(rolePrefix, seriesId) {
   const slug = String(seriesId ?? "")
     .trim()
     .toLowerCase()

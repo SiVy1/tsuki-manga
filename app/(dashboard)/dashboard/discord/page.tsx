@@ -16,6 +16,8 @@ type PageProps = {
   }>;
 };
 
+type DiscordDeliveryLogEntry = Awaited<ReturnType<typeof getDashboardDiscordData>>["deliveryLogs"][number];
+
 function parseIdList(raw: string) {
   return raw
     .split(/[\n,]/)
@@ -203,7 +205,7 @@ export default async function DashboardDiscordPage({ searchParams }: PageProps) 
             </div>
             {data.deliveryLogs.length ? (
               <div className="space-y-3 text-sm">
-                {data.deliveryLogs.map((entry) => (
+                {data.deliveryLogs.map((entry: DiscordDeliveryLogEntry) => (
                   <div key={entry.id} className="rounded-2xl border border-border px-4 py-3">
                     <p className="font-medium">{entry.eventType}</p>
                     <p className="text-muted">Status: {entry.status}</p>
